@@ -1,0 +1,25 @@
+# Flutter
+/.dart_tool/
+/.flutter-plugins
+/.flutter-plugins-dependencies
+/.packages
+/build/
+/pubspec.lock
+
+# IDE
+/.idea/
+/.vscode/
+*.iml
+
+# iOS / Android / macOS / Windows / Linux
+/ios/Pods/
+/ios/.symlinks/
+/android/.gradle/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+*.keystore
+
+# Misc
+/.DS_Store
+*.log
