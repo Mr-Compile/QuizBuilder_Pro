@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../models/user.dart';
 import '../../services/service_locator.dart';
+import '../../widgets/role_guard.dart';
 
 /// Create or edit a student account.
 class StudentFormScreen extends StatefulWidget {
@@ -79,10 +80,12 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.user != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Student' : 'Add Student'),
-      ),
+    return RoleGuard(
+      allowedRole: AppConstants.roleTeacher,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isEdit ? 'Edit Student' : 'Add Student'),
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.mediumSpacing),
         child: Form(
@@ -160,6 +163,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
+import '../../widgets/role_guard.dart';
 
 /// Create or edit a topic.
 class TopicFormScreen extends StatefulWidget {
@@ -71,10 +72,12 @@ class _TopicFormScreenState extends State<TopicFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.topic != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Topic' : 'Add Topic'),
-      ),
+    return RoleGuard(
+      allowedRole: AppConstants.roleTeacher,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isEdit ? 'Edit Topic' : 'Add Topic'),
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.mediumSpacing),
         child: Form(
@@ -136,6 +139,7 @@ class _TopicFormScreenState extends State<TopicFormScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 

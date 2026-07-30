@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -32,11 +33,45 @@ class _QuizScreenState extends State<QuizScreen> {
   List<Question> _questions = [];
   int _currentIndex = 0;
   final Map<int, String> _answers = {};
+  
+  Timer? _timer;
+  int _remainingSeconds = 300; // 5 minutes default
+  static const int _timePerQuestion = 60; // 1 minute per question
 
   @override
   void initState() {
     super.initState();
     _loadQuestions();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _remainingSeconds = _questions.length * _timePerQuestion;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _remainingSeconds--;
+      });
+      if (_remainingSeconds <= 0) {
+        timer.cancel();
+        _submit(forceFinish: true);
+      }
+    });
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   void _loadQuestions() {
@@ -46,40 +81,45 @@ class _QuizScreenState extends State<QuizScreen> {
     ).then((questions) {
       final copy = List<Question>.of(questions);
       copy.shuffle(Random());
+      _startTimer();
       return copy;
     });
     setState(() {});
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool forceFinish = false}) async {
     if (_currentIndex < _questions.length - 1) {
       setState(() => _currentIndex++);
       return;
     }
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Finish Quiz?'),
-        content: const Text('You are about to finish the quiz. Continue?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.finishQuiz,
-              foregroundColor: Colors.white,
+    if (!forceFinish) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Finish Quiz?'),
+          content: const Text('You are about to finish the quiz. Continue?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Finish'),
-          ),
-        ],
-      ),
-    );
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.finishQuiz,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Finish'),
+            ),
+          ],
+        ),
+      );
 
-    if (confirm != true || !mounted) return;
+      if (confirm != true || !mounted) return;
+    }
+
+    _timer?.cancel();
 
     final correctCount = _questions.where((q) => _answers[q.id] == q.correctAnswer).length;
     final total = _questions.length;
@@ -134,6 +174,33 @@ class _QuizScreenState extends State<QuizScreen> {
             icon: const Icon(LucideIcons.arrowLeft),
             onPressed: () => Navigator.of(context).pop(),
           ),
+          actions: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: _remainingSeconds < 60 ? AppColors.delete.withOpacity(0.2) : AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    LucideIcons.clock,
+                    size: 18,
+                    color: _remainingSeconds < 60 ? AppColors.delete : AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatTime(_remainingSeconds),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _remainingSeconds < 60 ? AppColors.delete : AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
         body: FutureBuilder(
           future: _questionsFuture,

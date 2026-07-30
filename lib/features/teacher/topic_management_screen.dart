@@ -119,48 +119,53 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
                     return const Center(child: Text('No topics found.'));
                   }
 
-                  return ListView.builder(
-                    itemCount: topics.length,
-                    itemBuilder: (context, index) {
-                      final t = topics[index];
-                      return FutureBuilder<int>(
-                        future: _db.getQuestionCountByTopic(t.id!),
-                        builder: (context, countSnapshot) {
-                          final count = countSnapshot.data ?? 0;
-                          return Card(
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                child: Icon(LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary),
-                              ),
-                              title: Text(t.name),
-                              subtitle: Text('${t.description}\n$count question${count == 1 ? '' : 's'}'),
-                              isThreeLine: true,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.edit, color: AppColors.edit),
-                                    onPressed: () async {
-                                      await Navigator.pushNamed(
-                                        context,
-                                        AppRoutes.topicForm,
-                                        arguments: {'topic': t},
-                                      );
-                                      _load();
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
-                                    onPressed: () => _delete(t),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      _load();
                     },
+                    child: ListView.builder(
+                      itemCount: topics.length,
+                      itemBuilder: (context, index) {
+                        final t = topics[index];
+                        return FutureBuilder<int>(
+                          future: _db.getQuestionCountByTopic(t.id!),
+                          builder: (context, countSnapshot) {
+                            final count = countSnapshot.data ?? 0;
+                            return Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  child: Icon(LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary),
+                                ),
+                                title: Text(t.name),
+                                subtitle: Text('${t.description}\n$count question${count == 1 ? '' : 's'}'),
+                                isThreeLine: true,
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(LucideIcons.edit, color: AppColors.edit),
+                                      onPressed: () async {
+                                        await Navigator.pushNamed(
+                                          context,
+                                          AppRoutes.topicForm,
+                                          arguments: {'topic': t},
+                                        );
+                                        _load();
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
+                                      onPressed: () => _delete(t),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   );
                 },
               ),

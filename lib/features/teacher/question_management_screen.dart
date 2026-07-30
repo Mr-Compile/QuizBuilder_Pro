@@ -173,41 +173,46 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                     return const Center(child: Text('No questions found.'));
                   }
 
-                  return ListView.builder(
-                    itemCount: questions.length,
-                    itemBuilder: (context, index) {
-                      final q = questions[index];
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _difficultyColor(q.difficulty),
-                            child: Text(q.difficulty[0]),
-                          ),
-                          title: Text(q.question, maxLines: 2, overflow: TextOverflow.ellipsis),
-                          subtitle: Text('Correct: ${q.correctAnswer}  |  Source: ${q.source}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(LucideIcons.edit, color: AppColors.edit),
-                                onPressed: () async {
-                                  await Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.questionForm,
-                                    arguments: {'question': q},
-                                  );
-                                  _load();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
-                                onPressed: () => _delete(q),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      _load();
                     },
+                    child: ListView.builder(
+                      itemCount: questions.length,
+                      itemBuilder: (context, index) {
+                        final q = questions[index];
+                        return Card(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: _difficultyColor(q.difficulty),
+                              child: Text(q.difficulty[0]),
+                            ),
+                            title: Text(q.question, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            subtitle: Text('Correct: ${q.correctAnswer}  |  Source: ${q.source}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(LucideIcons.edit, color: AppColors.edit),
+                                  onPressed: () async {
+                                    await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.questionForm,
+                                      arguments: {'question': q},
+                                    );
+                                    _load();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
+                                  onPressed: () => _delete(q),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               ),

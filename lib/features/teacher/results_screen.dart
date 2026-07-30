@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
@@ -21,6 +22,7 @@ class ResultsScreen extends StatefulWidget {
 class _ResultsScreenState extends State<ResultsScreen> {
   final _db = ServiceLocator.db;
   late Future<List<QuizResult>> _future;
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -33,12 +35,73 @@ class _ResultsScreenState extends State<ResultsScreen> {
     setState(() {});
   }
 
+  Future<void> _exportToCSV() async {
+    setState(() => _isExporting = true);
+
+    try {
+      final results = await _db.getAllResults();
+      if (results.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No results to export')),
+        );
+        setState(() => _isExporting = false);
+        return;
+      }
+
+      final csvBuffer = StringBuffer();
+      csvBuffer.writeln('Student,Topic,Difficulty,Score,Total,Percentage,Status,Date');
+
+      for (final result in results) {
+        final user = await _db.getUserById(result.userId);
+        final topic = await _db.getTopicById(result.topicId);
+        
+        final studentName = user?.fullName ?? 'Unknown';
+        final topicName = topic?.name ?? 'Unknown';
+        final status = result.passed ? 'PASS' : 'FAIL';
+        final date = result.createdAt.substring(0, 16).replaceFirst('T', ' ');
+
+        csvBuffer.writeln('$studentName,$topicName,${result.difficulty},${result.score},${result.totalQuestions},${result.percentage.toStringAsFixed(1)},$status,$date');
+      }
+
+      if (!mounted) return;
+      await Share.share(csvBuffer.toString(), subject: 'Quiz Results Export');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Results exported successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
       child: Scaffold(
-        appBar: AppBar(title: const Text('All Results')),
+        appBar: AppBar(
+          title: const Text('All Results'),
+          actions: [
+            IconButton(
+              icon: _isExporting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(LucideIcons.download, color: AppColors.edit),
+              onPressed: _isExporting ? null : _exportToCSV,
+              tooltip: 'Export to CSV',
+            ),
+          ],
+        ),
         body: FutureBuilder(
           future: _future,
           builder: (context, snapshot) {

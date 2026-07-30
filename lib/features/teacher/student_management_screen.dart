@@ -121,49 +121,54 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                     return const Center(child: Text('No students found.'));
                   }
 
-                  return ListView.builder(
-                    itemCount: students.length,
-                    itemBuilder: (context, index) {
-                      final s = students[index];
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: s.isActive ? AppColors.add : AppColors.cancel,
-                            child: Icon(
-                              s.isActive ? LucideIcons.userCheck : LucideIcons.userX,
-                              color: Colors.white,
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      _load();
+                    },
+                    child: ListView.builder(
+                      itemCount: students.length,
+                      itemBuilder: (context, index) {
+                        final s = students[index];
+                        return Card(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: s.isActive ? AppColors.add : AppColors.cancel,
+                              child: Icon(
+                                s.isActive ? LucideIcons.userCheck : LucideIcons.userX,
+                                color: Colors.white,
+                              ),
+                            ),
+                            title: Text(s.fullName),
+                            subtitle: Text('@${s.username}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Switch(
+                                  value: s.isActive,
+                                  onChanged: (_) => _toggleActive(s),
+                                  activeColor: AppColors.add,
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.edit, color: AppColors.edit),
+                                  onPressed: () async {
+                                    await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.studentForm,
+                                      arguments: {'user': s},
+                                    );
+                                    _load();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
+                                  onPressed: () => _delete(s),
+                                ),
+                              ],
                             ),
                           ),
-                          title: Text(s.fullName),
-                          subtitle: Text('@${s.username}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Switch(
-                                value: s.isActive,
-                                onChanged: (_) => _toggleActive(s),
-                                activeColor: AppColors.add,
-                              ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.edit, color: AppColors.edit),
-                                onPressed: () async {
-                                  await Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.studentForm,
-                                    arguments: {'user': s},
-                                  );
-                                  _load();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
-                                onPressed: () => _delete(s),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   );
                 },
               ),

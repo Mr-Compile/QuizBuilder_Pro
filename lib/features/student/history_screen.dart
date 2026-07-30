@@ -58,13 +58,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
               return const Center(child: Text('No quizzes taken yet.'));
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(AppTheme.mediumSpacing),
-              itemCount: results.length,
-              itemBuilder: (context, index) {
-                final r = results[index];
-                return _HistoryCard(result: r, db: _db);
+            return RefreshIndicator(
+              onRefresh: () async {
+                _load();
               },
+              child: ListView.builder(
+                padding: const EdgeInsets.all(AppTheme.mediumSpacing),
+                itemCount: results.length,
+                itemBuilder: (context, index) {
+                  final r = results[index];
+                  return _HistoryCard(result: r, db: _db);
+                },
+              ),
             );
           },
         ),
