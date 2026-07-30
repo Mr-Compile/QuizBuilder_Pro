@@ -82,11 +82,11 @@ class _ReviewCard extends StatelessWidget {
     return FutureBuilder(
       future: db.getQuestionById(answer.questionId),
       builder: (context, snapshot) {
-        final question = snapshot.data as Question?;
+        final question = snapshot.data;
         if (question == null) return const SizedBox.shrink();
 
         return Card(
-          color: answer.isCorrect ? AppColors.correct.withOpacity(0.2) : AppColors.incorrect.withOpacity(0.2),
+          color: answer.isCorrect ? AppColors.correct.withValues(alpha: 0.2) : AppColors.incorrect.withValues(alpha: 0.2),
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.cardPadding),
             child: Column(

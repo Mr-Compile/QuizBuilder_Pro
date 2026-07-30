@@ -3,7 +3,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';

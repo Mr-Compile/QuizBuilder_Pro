@@ -78,7 +78,7 @@ class _ResultView extends StatelessWidget {
     return FutureBuilder(
       future: db.getTopicById(result.topicId),
       builder: (context, topicSnapshot) {
-        final topic = topicSnapshot.data as Topic?;
+        final Topic? topic = topicSnapshot.data;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.mediumSpacing),

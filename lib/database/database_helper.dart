@@ -117,8 +117,6 @@ class DatabaseHelper {
 
   /// Inserts the default sample data required by the project brief.
   Future<void> _seedDatabase(Database db) async {
-    final now = DateTime.now().toIso8601String();
-
     // Admin
     await db.insert('users', {
       'full_name': 'Administrator',

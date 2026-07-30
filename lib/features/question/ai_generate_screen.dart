@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/dialog_helper.dart';
-import '../../database/database_helper.dart';
 import '../../models/question.dart';
 import '../../models/topic.dart';
 import '../../services/groq_ai_service.dart';
@@ -198,7 +197,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
                           ),
                           const SizedBox(height: AppTheme.mediumSpacing),
                           DropdownButtonFormField<Topic?>(
-                            value: _selectedTopic,
+                            initialValue: _selectedTopic,
                             decoration: const InputDecoration(labelText: 'Topic'),
                             items: _topics
                                 .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
@@ -210,7 +209,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
                             children: [
                               Expanded(
                                 child: DropdownButtonFormField<String?>(
-                                  value: _selectedDifficulty,
+                                  initialValue: _selectedDifficulty,
                                   decoration: const InputDecoration(labelText: 'Difficulty'),
                                   items: const [
                                     DropdownMenuItem(value: AppConstants.difficultyEasy, child: Text('Easy')),

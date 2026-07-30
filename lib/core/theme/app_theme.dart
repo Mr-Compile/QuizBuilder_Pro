@@ -20,7 +20,7 @@ class AppTheme {
         secondary: AppColors.secondary,
         brightness: Brightness.light,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -67,7 +67,7 @@ class AppTheme {
         secondary: AppColors.secondary,
         brightness: Brightness.dark,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),

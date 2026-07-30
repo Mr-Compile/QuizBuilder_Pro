@@ -4,7 +4,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/question.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
@@ -127,7 +126,7 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                 child: Column(
                   children: [
                     DropdownButtonFormField<Topic?>(
-                      value: _selectedTopic,
+                      initialValue: _selectedTopic,
                       decoration: const InputDecoration(labelText: 'Topic'),
                       items: _topics
                           .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
@@ -180,7 +179,7 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String?>(
-                            value: _correctAnswer,
+                            initialValue: _correctAnswer,
                             decoration: const InputDecoration(labelText: 'Correct Answer'),
                             items: const [
                               DropdownMenuItem(value: 'A', child: Text('A')),
@@ -194,7 +193,7 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                         const SizedBox(width: AppTheme.smallSpacing),
                         Expanded(
                           child: DropdownButtonFormField<String?>(
-                            value: _selectedDifficulty,
+                            initialValue: _selectedDifficulty,
                             decoration: const InputDecoration(labelText: 'Difficulty'),
                             items: const [
                               DropdownMenuItem(value: AppConstants.difficultyEasy, child: Text('Easy')),

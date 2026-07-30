@@ -5,7 +5,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 
@@ -146,7 +145,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                                 Switch(
                                   value: s.isActive,
                                   onChanged: (_) => _toggleActive(s),
-                                  activeColor: AppColors.add,
+                                  activeThumbColor: AppColors.add,
                                 ),
                                 IconButton(
                                   icon: const Icon(LucideIcons.edit, color: AppColors.edit),

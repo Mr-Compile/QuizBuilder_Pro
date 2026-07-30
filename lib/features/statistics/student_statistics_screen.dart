@@ -5,7 +5,6 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../models/quiz_result.dart';
-import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 
@@ -125,7 +124,7 @@ class _StatCard extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.15),
+          backgroundColor: color.withValues(alpha: 0.15),
           child: Icon(icon, color: color),
         ),
         title: Text(label),
@@ -151,7 +150,7 @@ class _FutureTopicCard extends StatelessWidget {
     return FutureBuilder(
       future: db.getTopicById(topicId),
       builder: (context, snapshot) {
-        final topic = snapshot.data as Topic?;
+        final topic = snapshot.data;
         return _StatCard(
           icon: LucideIcons.bookOpen,
           label: label,

@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/question.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
@@ -122,7 +121,7 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<int?>(
-                              value: _selectedTopicId,
+                              initialValue: _selectedTopicId,
                               decoration: const InputDecoration(labelText: 'Topic'),
                               items: [
                                 const DropdownMenuItem(value: null, child: Text('All Topics')),
@@ -138,7 +137,7 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                           const SizedBox(width: AppTheme.smallSpacing),
                           Expanded(
                             child: DropdownButtonFormField<String?>(
-                              value: _selectedDifficulty,
+                              initialValue: _selectedDifficulty,
                               decoration: const InputDecoration(labelText: 'Difficulty'),
                               items: const [
                                 DropdownMenuItem(value: null, child: Text('All')),

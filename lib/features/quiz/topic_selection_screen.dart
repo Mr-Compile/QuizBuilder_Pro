@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
@@ -63,7 +62,7 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(AppTheme.cardPadding),
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.secondary.withOpacity(0.15),
+                          backgroundColor: AppColors.secondary.withValues(alpha: 0.15),
                           child: const Icon(LucideIcons.bookOpen, color: AppColors.secondary),
                         ),
                         title: Text(t.name, style: Theme.of(context).textTheme.titleMedium),

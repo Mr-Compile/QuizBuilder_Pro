@@ -5,7 +5,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/user.dart';
 import '../../services/groq_ai_service.dart';
 import '../../services/service_locator.dart';
@@ -27,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   User? _user;
   late Future<GroqAiService> _groqFuture;
   bool _isTeacher = false;
+  ThemeMode _currentThemeMode = ThemeMode.system;
 
   @override
   void initState() {
@@ -38,9 +38,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadUser() async {
     final auth = await ServiceLocator.auth;
     final user = await auth.getCurrentUser();
+    final appState = QuizForgeApp.of(context);
     setState(() {
       _user = user;
       _isTeacher = user?.role == AppConstants.roleTeacher;
+      _currentThemeMode = appState?.themeMode ?? ThemeMode.system;
     });
   }
 
@@ -105,27 +107,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text('Theme', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppTheme.smallSpacing),
             Card(
-              child: Column(
-                children: [
-                  RadioListTile<ThemeMode>(
-                    title: const Text('System'),
-                    value: ThemeMode.system,
-                    groupValue: theme.brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-                    onChanged: (v) => _setTheme(v ?? ThemeMode.system),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    title: const Text('Light'),
-                    value: ThemeMode.light,
-                    groupValue: theme.brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-                    onChanged: (v) => _setTheme(v ?? ThemeMode.light),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    title: const Text('Dark'),
-                    value: ThemeMode.dark,
-                    groupValue: theme.brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-                    onChanged: (v) => _setTheme(v ?? ThemeMode.dark),
-                  ),
-                ],
+              child: RadioGroup<ThemeMode>(
+                groupValue: _currentThemeMode,
+                onChanged: (value) {
+                  if (value != null) {
+                    _setTheme(value);
+                    setState(() {
+                      _currentThemeMode = value;
+                    });
+                  }
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<ThemeMode>(
+                      title: const Text('System'),
+                      value: ThemeMode.system,
+                    ),
+                    RadioListTile<ThemeMode>(
+                      title: const Text('Light'),
+                      value: ThemeMode.light,
+                    ),
+                    RadioListTile<ThemeMode>(
+                      title: const Text('Dark'),
+                      value: ThemeMode.dark,
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: AppTheme.largeSpacing),
@@ -224,12 +231,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
             const SizedBox(height: AppTheme.largeSpacing),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, AppRoutes.about),
-                icon: const Icon(LucideIcons.info),
-                label: const Text('About'),
+            Text('Account', style: theme.textTheme.titleLarge),
+            const SizedBox(height: AppTheme.smallSpacing),
+            Card(
+              child: ListTile(
+                leading: const Icon(LucideIcons.logOut, color: AppColors.delete),
+                title: const Text('Logout'),
+                onTap: () async {
+                  final auth = await ServiceLocator.auth;
+                  await auth.logout();
+                  if (context.mounted) {
+                    Navigator.pushReplacementNamed(context, AppRoutes.login);
+                  }
+                },
               ),
             ),
           ],

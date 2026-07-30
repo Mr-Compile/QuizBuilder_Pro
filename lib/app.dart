@@ -43,6 +43,8 @@ class QuizForgeApp extends StatefulWidget {
 class _QuizForgeAppState extends State<QuizForgeApp> {
   ThemeMode _themeMode = ThemeMode.system;
 
+  ThemeMode get themeMode => _themeMode;
+
   @override
   void initState() {
     super.initState();

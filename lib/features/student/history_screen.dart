@@ -6,7 +6,6 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../models/quiz_result.dart';
-import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 
@@ -89,7 +88,7 @@ class _HistoryCard extends StatelessWidget {
     return FutureBuilder(
       future: db.getTopicById(result.topicId),
       builder: (context, topicSnapshot) {
-        final topic = topicSnapshot.data as Topic?;
+        final topic = topicSnapshot.data;
         return Card(
           child: ListTile(
             leading: CircleAvatar(

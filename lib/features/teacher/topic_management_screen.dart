@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
@@ -134,7 +133,7 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
                             return Card(
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                                   child: Icon(LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary),
                                 ),
                                 title: Text(t.name),

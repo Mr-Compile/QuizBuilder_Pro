@@ -6,7 +6,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
-import '../../database/database_helper.dart';
 import '../../models/question.dart';
 import '../../models/quiz_answer.dart';
 import '../../models/quiz_result.dart';
@@ -178,7 +177,7 @@ class _QuizScreenState extends State<QuizScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: _remainingSeconds < 60 ? AppColors.delete.withOpacity(0.2) : AppColors.primary.withOpacity(0.1),
+                color: _remainingSeconds < 60 ? AppColors.delete.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

@@ -34,7 +34,7 @@ class DialogHelper {
             ElevatedButton.icon(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await onRetry!();
+                await onRetry();
               },
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
@@ -72,7 +72,7 @@ class DialogHelper {
             ElevatedButton.icon(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await onRetry!();
+                await onRetry();
               },
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
