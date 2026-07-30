@@ -17,11 +17,11 @@ class DialogHelper {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(LucideIcons.alertCircle, color: AppColors.delete),
-            const SizedBox(width: 12),
-            Text(title),
+            Icon(LucideIcons.alertCircle, color: AppColors.delete),
+            SizedBox(width: 12),
+            Text('Something went wrong'),
           ],
         ),
         content: Text(message),
@@ -53,11 +53,11 @@ class DialogHelper {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.wifi_off, color: AppColors.delete),
-            const SizedBox(width: 12),
-            const Text('No internet connection'),
+            Icon(Icons.wifi_off, color: AppColors.delete),
+            SizedBox(width: 12),
+            Text('No internet connection'),
           ],
         ),
         content: const Text(

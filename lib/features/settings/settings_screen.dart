@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../app.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
@@ -26,7 +25,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   User? _user;
   late Future<GroqAiService> _groqFuture;
   bool _isTeacher = false;
-  ThemeMode _currentThemeMode = ThemeMode.system;
 
   @override
   void initState() {
@@ -39,11 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final auth = await ServiceLocator.auth;
     final user = await auth.getCurrentUser();
     if (!mounted) return;
-    final appState = QuizForgeApp.of(context);
     setState(() {
       _user = user;
       _isTeacher = user?.role == AppConstants.roleTeacher;
-      _currentThemeMode = appState?.themeMode ?? ThemeMode.system;
     });
   }
 
@@ -92,10 +88,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _setTheme(ThemeMode mode) {
-    QuizForgeApp.of(context)?.setTheme(mode);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -109,9 +101,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text('Theme', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppTheme.smallSpacing),
-            Card(
+            const Card(
               child: Column(
-                children: const [
+                children: [
                   RadioListTile<ThemeMode>(
                     title: Text('System'),
                     value: ThemeMode.system,

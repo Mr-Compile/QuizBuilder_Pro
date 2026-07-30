@@ -37,5 +37,5 @@ void main() {
   file.parent.createSync(recursive: true);
   file.writeAsBytesSync(encodePng(image));
   
-  print('Icon generated successfully at ${file.path}');
+  // Icon generated successfully at ${file.path}
 }

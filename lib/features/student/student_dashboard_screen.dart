@@ -50,16 +50,16 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
             ),
-            child: Column(
+            child: const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   LucideIcons.brain,
                   size: 64,
                   color: Colors.white,
                 ),
-                const SizedBox(height: AppTheme.smallSpacing),
-                const Text(
+                SizedBox(height: AppTheme.smallSpacing),
+                Text(
                   AppConstants.appName,
                   style: TextStyle(
                     color: Colors.white,
