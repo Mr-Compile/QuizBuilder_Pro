@@ -38,6 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadUser() async {
     final auth = await ServiceLocator.auth;
     final user = await auth.getCurrentUser();
+    if (!mounted) return;
     final appState = QuizForgeApp.of(context);
     setState(() {
       _user = user;
@@ -71,6 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final updated = _user!.copyWith(password: _newPasswordController.text);
     await ServiceLocator.db.updateUser(updated);
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Password updated successfully.')),
     );
@@ -84,6 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveApiKey() async {
     final groq = await _groqFuture;
     await groq.saveApiKey(_apiKeyController.text.trim());
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Groq API key saved.')),
     );
@@ -107,32 +110,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text('Theme', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppTheme.smallSpacing),
             Card(
-              child: RadioGroup<ThemeMode>(
-                groupValue: _currentThemeMode,
-                onChanged: (value) {
-                  if (value != null) {
-                    _setTheme(value);
-                    setState(() {
-                      _currentThemeMode = value;
-                    });
-                  }
-                },
-                child: Column(
-                  children: [
-                    RadioListTile<ThemeMode>(
-                      title: const Text('System'),
-                      value: ThemeMode.system,
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: const Text('Light'),
-                      value: ThemeMode.light,
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: const Text('Dark'),
-                      value: ThemeMode.dark,
-                    ),
-                  ],
-                ),
+              child: Column(
+                children: const [
+                  RadioListTile<ThemeMode>(
+                    title: Text('System'),
+                    value: ThemeMode.system,
+                  ),
+                  RadioListTile<ThemeMode>(
+                    title: Text('Light'),
+                    value: ThemeMode.light,
+                  ),
+                  RadioListTile<ThemeMode>(
+                    title: Text('Dark'),
+                    value: ThemeMode.dark,
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppTheme.largeSpacing),

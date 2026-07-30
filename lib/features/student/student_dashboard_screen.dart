@@ -41,6 +41,72 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  LucideIcons.brain,
+                  size: 64,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: AppTheme.smallSpacing),
+                const Text(
+                  AppConstants.appName,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(LucideIcons.home),
+            title: const Text('Dashboard'),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(LucideIcons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushNamed(AppRoutes.settings);
+            },
+          ),
+          ListTile(
+            leading: const Icon(LucideIcons.info),
+            title: const Text('About'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushNamed(AppRoutes.about);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(LucideIcons.logOut, color: AppColors.logout),
+            title: const Text('Logout', style: TextStyle(color: AppColors.logout)),
+            onTap: () {
+              Navigator.pop(context);
+              _logout();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
@@ -56,6 +122,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             ),
           ],
         ),
+        drawer: _buildDrawer(context),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.mediumSpacing),
           child: Column(

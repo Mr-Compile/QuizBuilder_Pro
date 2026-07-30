@@ -28,7 +28,7 @@ class AboutScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: AppTheme.smallSpacing),
-              Text(AppConstants.appTagline, textAlign: TextAlign.center),
+              const Text(AppConstants.appTagline, textAlign: TextAlign.center),
               const SizedBox(height: AppTheme.mediumSpacing),
               const Text('Version 1.0.0+1'),
               const SizedBox(height: AppTheme.largeSpacing),

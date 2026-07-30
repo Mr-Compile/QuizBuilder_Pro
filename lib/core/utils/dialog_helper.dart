@@ -19,7 +19,7 @@ class DialogHelper {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(LucideIcons.alertCircle, color: AppColors.delete),
+            const Icon(LucideIcons.alertCircle, color: AppColors.delete),
             const SizedBox(width: 12),
             Text(title),
           ],
@@ -55,7 +55,7 @@ class DialogHelper {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.wifi_off, color: AppColors.delete),
+            const Icon(Icons.wifi_off, color: AppColors.delete),
             const SizedBox(width: 12),
             const Text('No internet connection'),
           ],

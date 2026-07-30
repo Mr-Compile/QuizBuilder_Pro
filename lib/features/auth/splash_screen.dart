@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            Text(AppConstants.appTagline),
+            const Text(AppConstants.appTagline),
             const SizedBox(height: 32),
             const CircularProgressIndicator(),
           ],

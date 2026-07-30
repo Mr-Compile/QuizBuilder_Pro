@@ -45,7 +45,7 @@ class _DifficultySelectionScreenState extends State<DifficultySelectionScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: AppTheme.smallSpacing),
-              Text('Pick a level based on how many questions are available.'),
+              const Text('Pick a level based on how many questions are available.'),
               const SizedBox(height: AppTheme.largeSpacing),
               _DifficultyCard(
                 topic: widget.topic,

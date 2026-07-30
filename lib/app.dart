@@ -30,17 +30,17 @@ import 'features/teacher/topic_management_screen.dart';
 class QuizForgeApp extends StatefulWidget {
   const QuizForgeApp({super.key});
 
-  static final GlobalKey<_QuizForgeAppState> globalKey = GlobalKey();
+  static final GlobalKey<QuizForgeAppState> globalKey = GlobalKey();
 
-  static _QuizForgeAppState? of(BuildContext context) {
-    return context.findAncestorStateOfType<_QuizForgeAppState>();
+  static QuizForgeAppState? of(BuildContext context) {
+    return context.findAncestorStateOfType<QuizForgeAppState>();
   }
 
   @override
-  State<QuizForgeApp> createState() => _QuizForgeAppState();
+  State<QuizForgeApp> createState() => QuizForgeAppState();
 }
 
-class _QuizForgeAppState extends State<QuizForgeApp> {
+class QuizForgeAppState extends State<QuizForgeApp> {
   ThemeMode _themeMode = ThemeMode.system;
 
   ThemeMode get themeMode => _themeMode;

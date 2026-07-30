@@ -66,6 +66,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
       if (!mounted) return;
       await Share.share(csvBuffer.toString(), subject: 'Quiz Results Export');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Results exported successfully')),
       );
