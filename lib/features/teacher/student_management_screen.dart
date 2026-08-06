@@ -6,11 +6,13 @@ import '../../core/constants/app_constants.dart';
 import '../../core/permissions/permission_manager.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/confirmation/confirmation.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 import '../../widgets/permission_guard.dart';
 import '../../widgets/enhanced_cards.dart';
-import '../../widgets/enhanced_navigation.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../widgets/modal_bottom_sheet.dart';
 
 // Spacing constants for better readability
 const double _smallSpacing = AppTheme.spacing2;
@@ -41,32 +43,28 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
   }
 
   Future<void> _toggleActive(User student) async {
-    final updated = student.copyWith(isActive: !student.isActive);
-    await _db.updateUser(updated);
-    _load();
+    final action = student.isActive ? 'deactivate' : 'activate';
+    final confirmed = await ConfirmationDialogs.confirmSensitive(
+      context,
+      action: action,
+      message: 'Are you sure you want to $action "${student.fullName}"?',
+    );
+
+    if (confirmed) {
+      final updated = student.copyWith(isActive: !student.isActive);
+      await _db.updateUser(updated);
+      _load();
+    }
   }
 
   Future<void> _delete(User student) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Student'),
-        content: Text('Delete "${student.fullName}" permanently? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.delete, foregroundColor: Colors.white),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirmDestructive(
+      context,
+      itemName: student.fullName,
+      action: 'delete',
     );
 
-    if (confirm == true) {
+    if (confirmed) {
       await _db.deleteUser(student.id!);
       _load();
     }
@@ -78,39 +76,171 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
     return students.where((s) => s.fullName.toLowerCase().contains(query) || s.username.toLowerCase().contains(query)).toList();
   }
 
+  void _showAddStudentModal(BuildContext context) {
+    final nameController = TextEditingController();
+    final usernameController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ModalBottomSheet(
+        title: 'Add New Student',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty ||
+                  usernameController.text.trim().isEmpty ||
+                  passwordController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please fill in all fields')),
+                );
+                return;
+              }
+
+              final student = User(
+                fullName: nameController.text.trim(),
+                username: usernameController.text.trim(),
+                password: passwordController.text.trim(),
+                role: AppConstants.roleStudent,
+                isActive: true,
+              );
+
+              await _db.insertUser(student);
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _load();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Student added successfully')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.add,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add Student'),
+          ),
+        ],
+        children: [
+          TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Full Name',
+              hintText: 'Enter student name',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.user),
+            ),
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: usernameController,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              hintText: 'Enter username',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.atSign),
+            ),
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Password',
+              hintText: 'Enter password',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.lock),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQuickEditModal(BuildContext context, User student) {
+    final nameController = TextEditingController(text: student.fullName);
+    final usernameController = TextEditingController(text: student.username);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ModalBottomSheet(
+        title: 'Quick Edit',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final updated = student.copyWith(
+                fullName: nameController.text.trim(),
+                username: usernameController.text.trim(),
+              );
+
+              await _db.updateUser(updated);
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _load();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Student updated successfully')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.edit,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Update'),
+          ),
+        ],
+        children: [
+          TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Full Name',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.user),
+            ),
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: usernameController,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.atSign),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Manage Students'),
-          elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(LucideIcons.brain),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Open menu',
+      child: NavigationScaffold(
+        title: 'Manage Students',
+        currentRoute: AppRoutes.studentManagement,
+        actions: [
+          PermissionGuard(
+            permission: AppPermissions.createUsers,
+            child: IconButton(
+              icon: const Icon(LucideIcons.userPlus, color: AppColors.add),
+              onPressed: () => _showAddStudentModal(context),
+              tooltip: 'Add Student',
             ),
           ),
-          actions: [
-            PermissionGuard(
-              permission: AppPermissions.createUsers,
-              child: IconButton(
-                icon: const Icon(LucideIcons.userPlus, color: AppColors.add),
-                onPressed: () async {
-                  await Navigator.pushNamed(context, AppRoutes.studentForm);
-                  _load();
-                },
-                tooltip: 'Add Student',
-              ),
-            ),
-          ],
-        ),
-        drawer: EnhancedDrawer(
-          currentRoute: AppRoutes.studentManagement,
-          onLogout: _logout,
-        ),
+        ],
         body: Column(
           children: [
             _buildSearchBar(),
@@ -150,6 +280,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                               child: Icon(
                                 s.isActive ? LucideIcons.userCheck : LucideIcons.userX,
                                 color: Colors.white,
+                                size: 18,
                               ),
                             ),
                           ),
@@ -165,22 +296,17 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                             PermissionGuard(
                               permission: AppPermissions.editUsers,
                               child: IconButton(
-                                icon: const Icon(LucideIcons.edit, color: AppColors.edit),
-                                onPressed: () async {
-                                  await Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.studentForm,
-                                    arguments: {'user': s},
-                                  );
-                                  _load();
-                                },
+                                icon: const Icon(LucideIcons.edit, color: AppColors.edit, size: 18),
+                                onPressed: () => _showQuickEditModal(context, s),
+                                tooltip: 'Quick Edit',
                               ),
                             ),
                             PermissionGuard(
                               permission: AppPermissions.deleteUsers,
                               child: IconButton(
-                                icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
+                                icon: const Icon(LucideIcons.trash2, color: AppColors.delete, size: 18),
                                 onPressed: () => _delete(s),
+                                tooltip: 'Delete',
                               ),
                             ),
                           ],
@@ -249,13 +375,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _logout() async {
-    final auth = await ServiceLocator.auth;
-    await auth.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   @override

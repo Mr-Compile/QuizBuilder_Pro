@@ -418,6 +418,10 @@ class DatabaseHelper {
     return (result.first['count'] as int?) ?? 0;
   }
 
+  Future<List<Question>> getAllQuestions() async {
+    return getQuestions();
+  }
+
   // ---------------- Quiz Results ----------------
 
   Future<int> insertQuizResult(QuizResult result) async {

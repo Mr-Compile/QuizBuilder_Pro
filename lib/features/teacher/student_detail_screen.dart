@@ -8,6 +8,8 @@ import '../../models/user.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 import '../../widgets/enhanced_cards.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../core/routes/app_routes.dart';
 
 /// Teacher view for a single student's performance and progress.
 class StudentDetailScreen extends StatefulWidget {
@@ -42,11 +44,10 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.student.fullName),
-          elevation: 0,
-        ),
+      child: NavigationScaffold(
+        title: widget.student.fullName,
+        currentRoute: AppRoutes.studentDetail,
+        showDrawer: false,
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(_mediumSpacing),
           child: Column(

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../app.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/user.dart';
 import '../../services/groq_ai_service.dart';
 import '../../services/service_locator.dart';
-import '../../widgets/enhanced_navigation.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../widgets/modal_bottom_sheet.dart';
 
 /// Settings screen with theme toggle, password change and API key management.
 class SettingsScreen extends StatefulWidget {
@@ -19,19 +19,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _oldPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
   final _apiKeyController = TextEditingController();
 
   User? _user;
   late Future<GroqAiService> _groqFuture;
-  bool _isTeacher = false;
 
   static const double _smallSpacing = AppTheme.spacing2;
   static const double _mediumSpacing = AppTheme.spacing4;
   static const double _largeSpacing = AppTheme.spacing6;
-  static const double _cardPadding = AppTheme.spacing6;
 
   @override
   void initState() {
@@ -47,7 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _user = user;
-      _isTeacher = user?.role == AppConstants.roleTeacher;
     });
   }
 
@@ -56,74 +50,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final key = await groq.getApiKey();
     if (key != null && _apiKeyController.text.isEmpty) {
       setState(() => _apiKeyController.text = key);
-    }
-  }
-
-  Future<void> _changePassword() async {
-    if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showMessage('New passwords do not match.');
-      return;
-    }
-    if (_newPasswordController.text.isEmpty) {
-      _showMessage('Password cannot be empty.');
-      return;
-    }
-    if (_user == null) return;
-
-    if (_user!.password != _oldPasswordController.text) {
-      _showMessage('Old password is incorrect.');
-      return;
-    }
-
-    final updated = _user!.copyWith(password: _newPasswordController.text);
-    await ServiceLocator.db.updateUser(updated);
-
-    _showMessage('Password updated successfully.');
-
-    _oldPasswordController.clear();
-    _newPasswordController.clear();
-    _confirmPasswordController.clear();
-    _loadUser();
-  }
-
-  Future<void> _saveApiKey() async {
-    final groq = await _groqFuture;
-    final key = _apiKeyController.text.trim();
-    if (key.isNotEmpty && !key.startsWith('gsk_')) {
-      _showMessage('Groq API key should start with "gsk_".');
-      return;
-    }
-    await groq.saveApiKey(key);
-    if (!mounted) return;
-    _showMessage('Groq API key saved securely.');
-  }
-
-  Future<void> _clearApiKey() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear API Key'),
-        content: const Text('Remove the stored Groq API key?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.delete, foregroundColor: Colors.white),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      final groq = await _groqFuture;
-      await groq.clearApiKey();
-      _apiKeyController.clear();
-      if (!mounted) return;
-      _showMessage('API key cleared.');
     }
   }
 
@@ -145,183 +71,314 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final app = QuizBuilderProApp.of(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(LucideIcons.brain),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open menu',
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing2),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.primary),
+          const SizedBox(width: AppTheme.spacing2),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
-        ),
-      ),
-      drawer: EnhancedDrawer(
-        currentRoute: AppRoutes.settings,
-        onLogout: _logout,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(_mediumSpacing),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Theme', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: _smallSpacing),
-            Card(
-              child: Column(
-                children: [
-                  _buildThemeTile('System', ThemeMode.system, app),
-                  _buildThemeTile('Light', ThemeMode.light, app),
-                  _buildThemeTile('Dark', ThemeMode.dark, app),
-                ],
-              ),
-            ),
-            const SizedBox(height: _largeSpacing),
-            Text('Change Password', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: _smallSpacing),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(_cardPadding),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _oldPasswordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Old Password',
-                        prefixIcon: Icon(LucideIcons.lock),
-                      ),
-                    ),
-                    const SizedBox(height: _smallSpacing),
-                    TextField(
-                      controller: _newPasswordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'New Password',
-                        prefixIcon: Icon(LucideIcons.key),
-                      ),
-                    ),
-                    const SizedBox(height: _smallSpacing),
-                    TextField(
-                      controller: _confirmPasswordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Confirm New Password',
-                        prefixIcon: Icon(LucideIcons.key),
-                      ),
-                    ),
-                    const SizedBox(height: _mediumSpacing),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: _changePassword,
-                        icon: const Icon(LucideIcons.save),
-                        label: const Text('Update Password'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.add,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_isTeacher) ...[
-              const SizedBox(height: _largeSpacing),
-              Text('Groq API Key', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: _smallSpacing),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(_cardPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        controller: _apiKeyController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'API Key',
-                          hintText: 'gsk_...',
-                          prefixIcon: const Icon(LucideIcons.key),
-                          suffixIcon: IconButton(
-                            icon: const Icon(LucideIcons.save, color: AppColors.add),
-                            onPressed: _saveApiKey,
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                        ),
-                      ),
-                      const SizedBox(height: _smallSpacing),
-                      Text(
-                        'Stored securely in the platform keychain/encrypted storage.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(height: _mediumSpacing),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _saveApiKey,
-                              icon: const Icon(LucideIcons.save),
-                              label: const Text('Save Key'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.edit,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: _smallSpacing),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _clearApiKey,
-                              icon: const Icon(LucideIcons.trash2, color: AppColors.delete),
-                              label: const Text('Clear Key', style: TextStyle(color: AppColors.delete)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: _largeSpacing),
-            Text('Account', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: _smallSpacing),
-            Card(
-              child: ListTile(
-                leading: const Icon(LucideIcons.logOut, color: AppColors.logout),
-                title: const Text('Logout'),
-                subtitle: const Text('Sign out of the current session'),
-                onTap: _logout,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Future<void> _logout() async {
-    final auth = await ServiceLocator.auth;
-    await auth.logout();
+  Future<void> _testConnection(BuildContext context) async {
+    final groq = await _groqFuture;
+    final valid = await groq.hasValidApiKey();
+    
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+    
+    if (valid) {
+      _showMessage('Connection successful! API key is valid.');
+    } else {
+      _showMessage('Connection failed. Please check your API key.');
+    }
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final auth = await ServiceLocator.auth;
+              await auth.logout();
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, AppRoutes.login);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.delete, foregroundColor: Colors.white),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordModal(BuildContext context) {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ModalBottomSheet(
+        title: 'Change Password',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (newPasswordController.text != confirmPasswordController.text) {
+                _showMessage('Passwords do not match');
+                return;
+              }
+              if (newPasswordController.text.isEmpty) {
+                _showMessage('Password cannot be empty');
+                return;
+              }
+              if (_user == null) return;
+              if (_user!.password != oldPasswordController.text) {
+                _showMessage('Old password is incorrect');
+                return;
+              }
+
+              final updated = _user!.copyWith(password: newPasswordController.text);
+              await ServiceLocator.db.updateUser(updated);
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _showMessage('Password updated successfully');
+              _loadUser();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.edit,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Update Password'),
+          ),
+        ],
+        children: [
+          TextField(
+            controller: oldPasswordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Old Password',
+              hintText: 'Enter current password',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.lock),
+            ),
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: newPasswordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'New Password',
+              hintText: 'Enter new password',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.key),
+            ),
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: confirmPasswordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Confirm Password',
+              hintText: 'Confirm new password',
+              filled: true,
+              prefixIcon: Icon(LucideIcons.shieldCheck),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showApiKeyModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ModalBottomSheet(
+        title: 'Groq API Key',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+        children: [
+          TextField(
+            controller: _apiKeyController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'API Key',
+              hintText: 'gsk_...',
+              prefixIcon: Icon(LucideIcons.key),
+              filled: true,
+            ),
+          ),
+          const SizedBox(height: _smallSpacing),
+          Text(
+            'Stored securely in the platform keychain/encrypted storage.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
+          ),
+          const SizedBox(height: _mediumSpacing),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final groq = await _groqFuture;
+              await groq.saveApiKey(_apiKeyController.text);
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _showMessage('API key saved successfully');
+            },
+            icon: const Icon(LucideIcons.save),
+            label: const Text('Save API Key'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: _smallSpacing),
+          OutlinedButton.icon(
+            onPressed: () => _testConnection(context),
+            icon: const Icon(LucideIcons.link),
+            label: const Text('Test Connection'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationScaffold(
+      title: 'Settings',
+      currentRoute: AppRoutes.settings,
+      body: ListView(
+        padding: const EdgeInsets.all(AppTheme.spacing4),
+        children: [
+          // Theme Section
+          _buildSectionHeader(context, 'Appearance', LucideIcons.palette),
+          const SizedBox(height: _smallSpacing),
+          Card(
+            child: Builder(
+              builder: (context) {
+                final app = context.findAncestorStateOfType<QuizBuilderProAppState>();
+                return Column(
+                  children: [
+                    _buildThemeTile('System', ThemeMode.system, app),
+                    const Divider(height: 1),
+                    _buildThemeTile('Light', ThemeMode.light, app),
+                    const Divider(height: 1),
+                    _buildThemeTile('Dark', ThemeMode.dark, app),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: _largeSpacing),
+
+          // Account Section
+          _buildSectionHeader(context, 'Account', LucideIcons.user),
+          const SizedBox(height: _smallSpacing),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(LucideIcons.key),
+                  title: const Text('Change Password'),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => _showChangePasswordModal(context),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(LucideIcons.logOut, color: AppColors.delete),
+                  title: const Text('Logout', style: TextStyle(color: AppColors.delete)),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => _showLogoutDialog(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: _largeSpacing),
+
+          // API Section
+          _buildSectionHeader(context, 'API Configuration', LucideIcons.settings),
+          const SizedBox(height: _smallSpacing),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(LucideIcons.key),
+                  title: const Text('Groq API Key'),
+                  subtitle: const Text('Configure AI service'),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => _showApiKeyModal(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: _largeSpacing),
+
+          // About Section
+          _buildSectionHeader(context, 'About', LucideIcons.info),
+          const SizedBox(height: _smallSpacing),
+          const Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(LucideIcons.tag),
+                  title: Text('App Version'),
+                  subtitle: Text('1.0.0+1'),
+                ),
+                Divider(height: 1),
+                ListTile(
+                  leading: Icon(LucideIcons.code),
+                  title: Text('Developer'),
+                  subtitle: Text('Quiz Builder Pro Team'),
+                ),
+                Divider(height: 1),
+                ListTile(
+                  leading: Icon(LucideIcons.code),
+                  title: Text('GitHub'),
+                  subtitle: Text('View source code'),
+                  trailing: Icon(LucideIcons.chevronRight),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
-    _oldPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
     _apiKeyController.dispose();
     super.dispose();
   }

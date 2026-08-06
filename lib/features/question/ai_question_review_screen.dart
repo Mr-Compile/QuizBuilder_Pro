@@ -1,0 +1,519 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/dialog_helper.dart';
+import '../../models/question.dart';
+import '../../models/topic.dart';
+import '../../services/groq_ai_service.dart';
+import '../../services/service_locator.dart';
+import '../../widgets/role_guard.dart';
+
+/// Full-screen review page for AI-generated questions with multi-select import.
+class AiQuestionReviewScreen extends StatefulWidget {
+  final List<Question> generatedQuestions;
+  final Topic topic;
+  final String difficulty;
+  final int quantity;
+
+  const AiQuestionReviewScreen({
+    super.key,
+    required this.generatedQuestions,
+    required this.topic,
+    required this.difficulty,
+    required this.quantity,
+  });
+
+  @override
+  State<AiQuestionReviewScreen> createState() => _AiQuestionReviewScreenState();
+}
+
+class _AiQuestionReviewScreenState extends State<AiQuestionReviewScreen> {
+  final _db = ServiceLocator.db;
+  late Future<GroqAiService> _groqFuture;
+  late List<bool> _selected;
+  bool _isSaving = false;
+  bool _isRegenerating = false;
+
+  static const double _smallSpacing = AppTheme.spacing2;
+  static const double _mediumSpacing = AppTheme.spacing4;
+
+  @override
+  void initState() {
+    super.initState();
+    _groqFuture = ServiceLocator.groq;
+    _selected = List.generate(widget.generatedQuestions.length, (_) => true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RoleGuard(
+      allowedRole: AppConstants.roleTeacher,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Review Generated Questions'),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(LucideIcons.arrowLeft),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Column(
+          children: [
+            _buildToolbar(),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(_mediumSpacing),
+                itemCount: widget.generatedQuestions.length,
+                itemBuilder: (context, index) {
+                  final question = widget.generatedQuestions[index];
+                  return _buildQuestionCard(question, index);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolbar() {
+    final selectedCount = _selected.where((s) => s).length;
+    
+    return Container(
+      padding: const EdgeInsets.all(_mediumSpacing),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      child: Wrap(
+        spacing: _smallSpacing,
+        runSpacing: _smallSpacing,
+        children: [
+          TextButton.icon(
+            onPressed: _selectAll,
+            icon: const Icon(LucideIcons.checkSquare),
+            label: const Text('Select All'),
+          ),
+          TextButton.icon(
+            onPressed: _deselectAll,
+            icon: const Icon(LucideIcons.square),
+            label: const Text('Deselect All'),
+          ),
+          const SizedBox(width: _smallSpacing),
+          Container(
+            height: 24,
+            width: 1,
+            color: Colors.grey.shade300,
+          ),
+          Text(
+            '$selectedCount selected',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+          if (_isSaving)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: selectedCount > 0 ? _saveSelected : null,
+              icon: const Icon(LucideIcons.save),
+              label: const Text('Save Selected'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.add,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          const SizedBox(width: _smallSpacing),
+          OutlinedButton.icon(
+            onPressed: _isRegenerating ? null : _regenerate,
+            icon: _isRegenerating
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(LucideIcons.refreshCw),
+            label: const Text('Regenerate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(Question question, int index) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: _mediumSpacing),
+      child: Padding(
+        padding: const EdgeInsets.all(_mediumSpacing),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Checkbox(
+                  value: _selected[index],
+                  onChanged: (value) => setState(() => _selected[index] = value ?? false),
+                ),
+                Expanded(
+                  child: Text(
+                    'Question ${index + 1}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _smallSpacing,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getDifficultyColor(question.difficulty).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    question.difficulty,
+                    style: TextStyle(
+                      color: _getDifficultyColor(question.difficulty),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: _smallSpacing),
+            Text(
+              question.question,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: _mediumSpacing),
+            _buildOptions(question),
+            const SizedBox(height: _smallSpacing),
+            Container(
+              padding: const EdgeInsets.all(_smallSpacing),
+              decoration: BoxDecoration(
+                color: AppColors.add.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.checkCircle,
+                    color: AppColors.add,
+                    size: 16,
+                  ),
+                  const SizedBox(width: _smallSpacing),
+                  Text(
+                    'Correct Answer: ${question.correctAnswer}',
+                    style: const TextStyle(
+                      color: AppColors.add,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: _smallSpacing),
+            Row(
+              children: [
+                Icon(
+                  LucideIcons.bookOpen,
+                  size: 16,
+                  color: Colors.grey.shade600,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  widget.topic.name,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: _smallSpacing),
+                Icon(
+                  LucideIcons.tag,
+                  size: 16,
+                  color: Colors.grey.shade600,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  question.category,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptions(Question question) {
+    final options = [
+      ('A', question.optionA),
+      ('B', question.optionB),
+      ('C', question.optionC),
+      ('D', question.optionD),
+    ];
+
+    return Column(
+      children: options.map((option) {
+        final isCorrect = option.$1 == question.correctAnswer;
+        return Container(
+          margin: const EdgeInsets.only(bottom: _smallSpacing),
+          padding: const EdgeInsets.all(_smallSpacing),
+          decoration: BoxDecoration(
+            color: isCorrect 
+                ? AppColors.add.withValues(alpha: 0.1)
+                : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isCorrect ? AppColors.add : Colors.grey.shade300,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isCorrect ? AppColors.add : Colors.grey.shade400,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    option.$1,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: _smallSpacing),
+              Expanded(
+                child: Text(
+                  option.$2,
+                  style: TextStyle(
+                    fontWeight: isCorrect ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (isCorrect)
+                const Icon(
+                  LucideIcons.check,
+                  color: AppColors.add,
+                  size: 16,
+                ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        return AppColors.add;
+      case 'medium':
+        return AppColors.edit;
+      case 'hard':
+        return AppColors.delete;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  void _selectAll() {
+    setState(() => _selected = List.generate(_selected.length, (_) => true));
+  }
+
+  void _deselectAll() {
+    setState(() => _selected = List.generate(_selected.length, (_) => false));
+  }
+
+  Future<void> _saveSelected() async {
+    final toSave = <Question>[];
+    for (int i = 0; i < widget.generatedQuestions.length; i++) {
+      if (_selected[i]) toSave.add(widget.generatedQuestions[i]);
+    }
+
+    if (toSave.isEmpty) {
+      await DialogHelper.showError(
+        context,
+        'Select at least one generated question to save.',
+        title: 'Nothing selected',
+      );
+      return;
+    }
+
+    // Check for duplicates
+    final duplicates = await _checkForDuplicates(toSave);
+    if (duplicates.isNotEmpty) {
+      await _showDuplicateDialog(duplicates, toSave);
+      return;
+    }
+
+    await _performSave(toSave);
+  }
+
+  Future<List<Question>> _checkForDuplicates(List<Question> questions) async {
+    final existingQuestions = await _db.getQuestions(topicId: widget.topic.id);
+    final duplicates = <Question>[];
+
+    for (final question in questions) {
+      final isDuplicate = existingQuestions.any((existing) =>
+          existing.question.toLowerCase() == question.question.toLowerCase());
+      if (isDuplicate) {
+        duplicates.add(question);
+      }
+    }
+
+    return duplicates;
+  }
+
+  Future<void> _showDuplicateDialog(List<Question> duplicates, List<Question> toSave) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(LucideIcons.alertTriangle, color: AppColors.edit),
+            SizedBox(width: _smallSpacing),
+            Text('Duplicate Questions Found'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${duplicates.length} of ${toSave.length} questions already exist in this topic.',
+            ),
+            const SizedBox(height: _mediumSpacing),
+            const Text(
+              'What would you like to do?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'skip'),
+            child: const Text('Skip Duplicates'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, 'unique'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.add,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Save Unique Only'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result == 'cancel') return;
+
+    if (result == 'skip') {
+      final unique = toSave.where((q) => !duplicates.contains(q)).toList();
+      if (unique.isEmpty) {
+        if (!mounted) return;
+        await DialogHelper.showError(
+          context,
+          'All questions are duplicates. No questions to save.',
+          title: 'All Duplicates',
+        );
+        return;
+      }
+      await _performSave(unique);
+    } else if (result == 'unique') {
+      await _performSave(toSave);
+    }
+  }
+
+  Future<void> _performSave(List<Question> questions) async {
+    setState(() => _isSaving = true);
+
+    try {
+      final groq = await _groqFuture;
+      final user = await (await ServiceLocator.auth).getCurrentUser();
+      final createdBy = user?.id ?? 1;
+      await groq.saveQuestions(questions, createdBy);
+      
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${questions.length} question(s) saved successfully')),
+      );
+      
+      Navigator.pop(context, true); // Return true to indicate success
+    } catch (e) {
+      if (!mounted) return;
+      final message = e.toString().replaceFirst('Exception: ', '');
+      await DialogHelper.showError(context, message, title: 'Save failed');
+    } finally {
+      setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _regenerate() async {
+    setState(() => _isRegenerating = true);
+
+    try {
+      final groq = await _groqFuture;
+      final questions = await groq.generateQuestions(
+        topicId: widget.topic.id!,
+        difficulty: widget.difficulty,
+        quantity: widget.quantity,
+        category: widget.topic.name,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _selected = List.generate(questions.length, (_) => true);
+      });
+
+      // Navigate to a new review screen with the regenerated questions
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AiQuestionReviewScreen(
+            generatedQuestions: questions,
+            topic: widget.topic,
+            difficulty: widget.difficulty,
+            quantity: widget.quantity,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = e.toString().replaceFirst('Exception: ', '');
+      await DialogHelper.showError(context, message, onRetry: _regenerate);
+    } finally {
+      setState(() => _isRegenerating = false);
+    }
+  }
+}

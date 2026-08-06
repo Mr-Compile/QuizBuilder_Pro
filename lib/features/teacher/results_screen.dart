@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../models/quiz_result.dart';
@@ -10,6 +11,8 @@ import '../../models/topic.dart';
 import '../../models/user.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../widgets/enhanced_cards.dart';
 
 /// Teacher view of all quiz results.
 class ResultsScreen extends StatefulWidget {
@@ -86,23 +89,22 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('All Results'),
-          actions: [
-            IconButton(
-              icon: _isExporting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(LucideIcons.download, color: AppColors.edit),
-              onPressed: _isExporting ? null : _exportToCSV,
-              tooltip: 'Export to CSV',
-            ),
-          ],
-        ),
+      child: NavigationScaffold(
+        title: 'All Results',
+        currentRoute: AppRoutes.results,
+        actions: [
+          IconButton(
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(LucideIcons.download, color: AppColors.edit),
+            onPressed: _isExporting ? null : _exportToCSV,
+            tooltip: 'Export to CSV',
+          ),
+        ],
         body: FutureBuilder(
           future: _future,
           builder: (context, snapshot) {
@@ -144,29 +146,24 @@ class _ResultCard extends StatelessWidget {
         final user = snapshot.data?['user'] as User?;
         final topic = snapshot.data?['topic'] as Topic?;
 
-        return Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: result.passed ? AppColors.add : AppColors.delete,
-              child: Icon(
-                result.passed ? LucideIcons.check : LucideIcons.x,
-                color: Colors.white,
-              ),
-            ),
-            title: Text('${user?.fullName ?? 'Student'} — ${topic?.name ?? 'Topic'}'),
-            subtitle: Text(
-              'Score: ${result.score}/${result.totalQuestions}  |  ${result.percentage.toStringAsFixed(1)}%\n'
-              'Difficulty: ${result.difficulty}',
-            ),
-            isThreeLine: true,
-            trailing: Text(
-              result.passed ? 'PASS' : 'FAIL',
-              style: TextStyle(
-                color: result.passed ? AppColors.add : AppColors.delete,
-                fontWeight: FontWeight.bold,
-              ),
+        final color = result.passed ? AppColors.add : AppColors.delete;
+
+        return EnhancedListItem(
+          title: '${user?.fullName ?? 'Student'} — ${topic?.name ?? 'Topic'}',
+          subtitle: 'Score: ${result.score}/${result.totalQuestions}  |  ${result.percentage.toStringAsFixed(1)}%  |  Difficulty: ${result.difficulty}',
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.15),
+            child: Icon(
+              result.passed ? LucideIcons.check : LucideIcons.x,
+              color: color,
             ),
           ),
+          trailing: [
+            StatusBadge(
+              label: result.passed ? 'PASS' : 'FAIL',
+              color: color,
+            ),
+          ],
         );
       },
     );

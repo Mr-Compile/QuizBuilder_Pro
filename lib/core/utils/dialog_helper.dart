@@ -2,8 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../constants/app_colors.dart';
+import '../confirmation/confirmation.dart';
+import '../confirmation/confirmation_dialogs.dart';
 
 /// Reusable, accessible dialogs used throughout QuizBuilder Pro.
+/// Now uses the centralized confirmation system for consistency.
 class DialogHelper {
   DialogHelper._();
 
@@ -87,6 +90,7 @@ class DialogHelper {
   }
 
   /// Shows a confirmation dialog and returns `true` if the user confirms.
+  /// Delegates to the centralized ConfirmationDialogs for consistency.
   static Future<bool> confirm(
     BuildContext context, {
     required String title,
@@ -95,27 +99,14 @@ class DialogHelper {
     String cancelText = 'Cancel',
     Color confirmColor = AppColors.primary,
   }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(cancelText),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: confirmColor,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(confirmText),
-          ),
-        ],
-      ),
+    return ConfirmationDialogs.confirm(
+      context,
+      title: title,
+      message: message,
+      confirmText: confirmText,
+      cancelText: cancelText,
+      style: ConfirmationStyle.dialog,
+      severity: Severity.info,
     );
-    return result == true;
   }
 }

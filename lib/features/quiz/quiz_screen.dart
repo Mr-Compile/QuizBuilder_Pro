@@ -52,6 +52,10 @@ class _QuizScreenState extends State<QuizScreen> {
   void _startTimer() {
     _timer?.cancel();
     _remainingSeconds = _questions.length * _timePerQuestion;
+    // Ensure timer starts with proper state update
+    setState(() {
+      _remainingSeconds = _questions.length * _timePerQuestion;
+    });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -73,6 +77,14 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
+  void _selectAnswer(int? questionId, String answer) {
+    if (questionId != null) {
+      setState(() {
+        _answers[questionId] = answer;
+      });
+    }
+  }
+
   void _loadQuestions() {
     _questionsFuture = _db.getQuestions(
       topicId: widget.topic.id,
@@ -80,6 +92,8 @@ class _QuizScreenState extends State<QuizScreen> {
     ).then((questions) {
       final copy = List<Question>.of(questions);
       copy.shuffle(Random());
+      // Reset index to ensure we start at question 1
+      _currentIndex = 0;
       _startTimer();
       return copy;
     });
@@ -174,31 +188,35 @@ class _QuizScreenState extends State<QuizScreen> {
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: _remainingSeconds < 60 ? AppColors.delete.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    LucideIcons.clock,
-                    size: 18,
-                    color: _remainingSeconds < 60 ? AppColors.delete : AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatTime(_remainingSeconds),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _remainingSeconds < 60 ? AppColors.delete.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      LucideIcons.clock,
+                      size: 16,
                       color: _remainingSeconds < 60 ? AppColors.delete : AppColors.primary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatTime(_remainingSeconds),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: _remainingSeconds < 60 ? AppColors.delete : AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 8),
           ],
         ),
         body: FutureBuilder(
@@ -241,25 +259,25 @@ class _QuizScreenState extends State<QuizScreen> {
                                 label: 'A',
                                 text: question.optionA,
                                 selected: _answers[question.id] == 'A',
-                                onTap: () => setState(() => _answers[question.id!] = 'A'),
+                                onTap: () => _selectAnswer(question.id, 'A'),
                               ),
                               _OptionTile(
                                 label: 'B',
                                 text: question.optionB,
                                 selected: _answers[question.id] == 'B',
-                                onTap: () => setState(() => _answers[question.id!] = 'B'),
+                                onTap: () => _selectAnswer(question.id, 'B'),
                               ),
                               _OptionTile(
                                 label: 'C',
                                 text: question.optionC,
                                 selected: _answers[question.id] == 'C',
-                                onTap: () => setState(() => _answers[question.id!] = 'C'),
+                                onTap: () => _selectAnswer(question.id, 'C'),
                               ),
                               _OptionTile(
                                 label: 'D',
                                 text: question.optionD,
                                 selected: _answers[question.id] == 'D',
-                                onTap: () => setState(() => _answers[question.id!] = 'D'),
+                                onTap: () => _selectAnswer(question.id, 'D'),
                               ),
                             ],
                           ),

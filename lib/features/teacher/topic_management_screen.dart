@@ -5,12 +5,15 @@ import '../../core/constants/app_constants.dart';
 import '../../core/permissions/permission_manager.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/confirmation/confirmation.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 import '../../widgets/permission_guard.dart';
 import '../../widgets/enhanced_cards.dart';
-import '../../widgets/enhanced_navigation.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../widgets/modal_bottom_sheet.dart';
+import '../../widgets/smart_topic_dropdown.dart';
 
 // Spacing constants for better readability
 const double _smallSpacing = AppTheme.spacing2;
@@ -41,29 +44,13 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
   }
 
   Future<void> _delete(Topic topic) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Topic'),
-        content: Text('Delete "${topic.name}" and all its questions? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.delete,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirmDestructive(
+      context,
+      itemName: '"${topic.name}" and all its questions',
+      action: 'delete',
     );
 
-    if (confirm == true) {
+    if (confirmed) {
       await _db.deleteTopic(topic.id!);
       _load();
     }
@@ -75,39 +62,163 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
     return topics.where((t) => t.name.toLowerCase().contains(query) || t.description.toLowerCase().contains(query)).toList();
   }
 
+  void _showAddTopicModal(BuildContext context) {
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ModalBottomSheet(
+        title: 'Add New Topic',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a topic name')),
+                );
+                return;
+              }
+
+              final topic = Topic(
+                name: nameController.text.trim(),
+                description: descriptionController.text.trim().isEmpty 
+                    ? 'No description' 
+                    : descriptionController.text.trim(),
+              );
+
+              await _db.insertTopic(topic);
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _load();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Topic added successfully')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.add,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add Topic'),
+          ),
+        ],
+        children: [
+          SmartTopicDropdown(
+            selectedTopic: null,
+            existingTopics: const [],
+            onTopicSelected: (topic) => nameController.text = topic ?? '',
+            labelText: 'Topic Name',
+            hintText: 'Search or enter topic name',
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: descriptionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Description',
+              hintText: 'Enter topic description',
+              filled: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditTopicModal(BuildContext context, Topic topic) {
+    final nameController = TextEditingController(text: topic.name);
+    final descriptionController = TextEditingController(text: topic.description);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ModalBottomSheet(
+        title: 'Edit Topic',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a topic name')),
+                );
+                return;
+              }
+
+              final updatedTopic = topic.copyWith(
+                name: nameController.text.trim(),
+                description: descriptionController.text.trim().isEmpty 
+                    ? 'No description' 
+                    : descriptionController.text.trim(),
+              );
+
+              await _db.updateTopic(updatedTopic);
+              if (!mounted) return;
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _load();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Topic updated successfully')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.edit,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Update Topic'),
+          ),
+        ],
+        children: [
+          SmartTopicDropdown(
+            selectedTopic: topic.name,
+            existingTopics: const [],
+            onTopicSelected: (newTopic) => nameController.text = newTopic ?? topic.name,
+            labelText: 'Topic Name',
+            hintText: 'Search or enter topic name',
+          ),
+          const SizedBox(height: _mediumSpacing),
+          TextField(
+            controller: descriptionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Description',
+              hintText: 'Enter topic description',
+              filled: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Manage Topics'),
-          elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(LucideIcons.brain),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Open menu',
+      child: NavigationScaffold(
+        title: 'Manage Topics',
+        currentRoute: AppRoutes.topicManagement,
+        actions: [
+          PermissionGuard(
+            permission: AppPermissions.createTopics,
+            child: IconButton(
+              icon: const Icon(LucideIcons.plus, color: AppColors.add),
+              onPressed: () => _showAddTopicModal(context),
+              tooltip: 'Add Topic',
             ),
           ),
-          actions: [
-            PermissionGuard(
-              permission: AppPermissions.createTopics,
-              child: IconButton(
-                icon: const Icon(LucideIcons.plus, color: AppColors.add),
-                onPressed: () async {
-                  await Navigator.pushNamed(context, AppRoutes.topicForm);
-                  _load();
-                },
-                tooltip: 'Add Topic',
-              ),
-            ),
-          ],
-        ),
-        drawer: EnhancedDrawer(
-          currentRoute: AppRoutes.topicManagement,
-          onLogout: _logout,
-        ),
+        ],
         body: Column(
           children: [
             _buildSearchBar(),
@@ -150,14 +261,7 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
                                   permission: AppPermissions.editTopics,
                                   child: IconButton(
                                     icon: const Icon(LucideIcons.edit, color: AppColors.edit),
-                                    onPressed: () async {
-                                      await Navigator.pushNamed(
-                                        context,
-                                        AppRoutes.topicForm,
-                                        arguments: {'topic': t},
-                                      );
-                                      _load();
-                                    },
+                                    onPressed: () => _showEditTopicModal(context, t),
                                   ),
                                 ),
                                 PermissionGuard(
@@ -235,13 +339,6 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _logout() async {
-    final auth = await ServiceLocator.auth;
-    await auth.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   @override

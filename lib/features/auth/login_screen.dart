@@ -60,6 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = screenWidth < 360 ? 48.0 : 72.0;
+    final cardPadding = screenWidth < 360 ? _mediumSpacing : _cardPadding;
+    
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -74,18 +78,23 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(_largeSpacing),
+            padding: EdgeInsets.only(
+              left: screenWidth < 360 ? _mediumSpacing : _largeSpacing,
+              right: screenWidth < 360 ? _mediumSpacing : _largeSpacing,
+              top: screenWidth < 360 ? _mediumSpacing : _largeSpacing,
+              bottom: MediaQuery.of(context).viewInsets.bottom + (screenWidth < 360 ? _mediumSpacing : _largeSpacing),
+            ),
             child: Card(
               elevation: 8,
               shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
               child: Padding(
-                padding: const EdgeInsets.all(_cardPadding),
+                padding: EdgeInsets.all(cardPadding),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       LucideIcons.brain,
-                      size: 72,
+                      size: iconSize,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(height: _mediumSpacing),
@@ -95,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.primary,
                           ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: _smallSpacing),
                     Text(

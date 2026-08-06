@@ -5,13 +5,14 @@ import '../../core/constants/app_constants.dart';
 import '../../core/permissions/permission_manager.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/confirmation/confirmation.dart';
 import '../../models/question.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
 import '../../widgets/permission_guard.dart';
 import '../../widgets/enhanced_cards.dart';
-import '../../widgets/enhanced_navigation.dart';
+import '../../widgets/navigation_scaffold.dart';
 
 // Spacing constants for better readability
 const double _smallSpacing = AppTheme.spacing2;
@@ -51,26 +52,13 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
   }
 
   Future<void> _delete(Question question) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Question'),
-        content: const Text('Are you sure you want to delete this question? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.delete, foregroundColor: Colors.white),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirmDestructive(
+      context,
+      itemName: 'this question',
+      action: 'delete',
     );
 
-    if (confirm == true) {
+    if (confirmed) {
       await _db.deleteQuestion(question.id!);
       _load();
     }
@@ -93,45 +81,32 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Manage Questions'),
-          elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(LucideIcons.brain),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Open menu',
+      child: NavigationScaffold(
+        title: 'Manage Questions',
+        currentRoute: AppRoutes.questionManagement,
+        actions: [
+          PermissionGuard(
+            permission: AppPermissions.createQuestions,
+            child: IconButton(
+              icon: const Icon(LucideIcons.plus, color: AppColors.add),
+              onPressed: () async {
+                await Navigator.pushNamed(context, AppRoutes.questionForm);
+                _load();
+              },
+              tooltip: 'Add Question',
             ),
           ),
-          actions: [
-            PermissionGuard(
-              permission: AppPermissions.createQuestions,
-              child: IconButton(
-                icon: const Icon(LucideIcons.plus, color: AppColors.add),
-                onPressed: () async {
-                  await Navigator.pushNamed(context, AppRoutes.questionForm);
-                  _load();
-                },
-                tooltip: 'Add Question',
-              ),
+          PermissionGuard(
+            permission: AppPermissions.generateAIQuestions,
+            child: IconButton(
+              icon: const Icon(LucideIcons.wand, color: AppColors.startQuiz),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.aiGenerate);
+              },
+              tooltip: 'Generate AI Questions',
             ),
-            PermissionGuard(
-              permission: AppPermissions.generateAIQuestions,
-              child: IconButton(
-                icon: const Icon(LucideIcons.wand, color: AppColors.startQuiz),
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.aiGenerate);
-                },
-                tooltip: 'Generate AI Questions',
-              ),
-            ),
-          ],
-        ),
-        drawer: EnhancedDrawer(
-          currentRoute: AppRoutes.questionManagement,
-          onLogout: _logout,
-        ),
+          ),
+        ],
         body: Column(
           children: [
             _buildFilters(),
@@ -321,13 +296,6 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _logout() async {
-    final auth = await ServiceLocator.auth;
-    await auth.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   @override

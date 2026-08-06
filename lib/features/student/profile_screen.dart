@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/user.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
-import '../../widgets/enhanced_navigation.dart';
+import '../../widgets/navigation_scaffold.dart';
 
 /// Student profile screen for editing own details and password.
 class ProfileScreen extends StatefulWidget {
@@ -128,26 +128,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleStudent,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('My Profile'),
-          elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(LucideIcons.brain),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Open menu',
-            ),
-          ),
-        ),
-        drawer: EnhancedDrawer(
-          currentRoute: AppRoutes.profile,
-          onLogout: _logout,
-        ),
+      child: NavigationScaffold(
+        title: 'My Profile',
+        currentRoute: AppRoutes.profile,
         body: _user == null
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: const EdgeInsets.all(_mediumSpacing),
+                padding: EdgeInsets.only(
+                  left: _mediumSpacing,
+                  right: _mediumSpacing,
+                  top: _mediumSpacing,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + _mediumSpacing,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -164,22 +156,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final avatarRadius = screenWidth < 360 ? 36.0 : 48.0;
+    final iconSize = screenWidth < 360 ? 36.0 : 48.0;
+    
     return Center(
       child: Column(
         children: [
           CircleAvatar(
-            radius: 48,
+            radius: avatarRadius,
             backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-            child: const Icon(LucideIcons.user, size: 48, color: AppColors.primary),
+            child: Icon(LucideIcons.user, size: iconSize, color: AppColors.primary),
           ),
           const SizedBox(height: _smallSpacing),
           Text(
             _user!.fullName,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             '@${_user!.username}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -254,18 +255,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: _newPasswordController,
               obscureText: !_isPasswordVisible,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'New Password',
-                prefixIcon: Icon(LucideIcons.key),
+                prefixIcon: const Icon(LucideIcons.key),
+                suffixIcon: IconButton(
+                  icon: Icon(_isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                ),
               ),
             ),
             const SizedBox(height: _mediumSpacing),
             TextField(
               controller: _confirmPasswordController,
               obscureText: !_isPasswordVisible,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Confirm New Password',
-                prefixIcon: Icon(LucideIcons.key),
+                prefixIcon: const Icon(LucideIcons.key),
+                suffixIcon: IconButton(
+                  icon: Icon(_isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                ),
               ),
             ),
             const SizedBox(height: _mediumSpacing),
@@ -285,13 +294,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _logout() async {
-    final auth = await ServiceLocator.auth;
-    await auth.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   @override

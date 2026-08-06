@@ -10,6 +10,7 @@ import '../../models/quiz_result.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/enhanced_cards.dart';
 
 /// Displays the score, percentage and pass/fail status after a quiz.
 class QuizResultScreen extends StatefulWidget {
@@ -85,46 +86,109 @@ class _ResultView extends StatelessWidget {
           child: Column(
             children: [
               Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.largeSpacing),
+                elevation: 4,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        (result.passed ? AppColors.add : AppColors.delete).withValues(alpha: 0.1),
+                        (result.passed ? AppColors.add : AppColors.delete).withValues(alpha: 0.05),
+                      ],
+                    ),
+                  ),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 360 ? AppTheme.mediumSpacing : AppTheme.largeSpacing),
                   child: Column(
                     children: [
                       Icon(
                         result.passed ? LucideIcons.trophy : LucideIcons.alertCircle,
-                        size: 72,
+                        size: MediaQuery.of(context).size.width < 360 ? 48 : 64,
                         color: result.passed ? AppColors.add : AppColors.delete,
                       ),
                       const SizedBox(height: AppTheme.mediumSpacing),
-                      Text(
-                        result.passed ? 'PASS' : 'FAIL',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              color: result.passed ? AppColors.add : AppColors.delete,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      StatusBadge(
+                        label: result.passed ? 'PASS' : 'FAIL',
+                        color: result.passed ? AppColors.add : AppColors.delete,
+                        isActive: true,
                       ),
                       const SizedBox(height: AppTheme.smallSpacing),
                       Text(
                         '${result.percentage.toStringAsFixed(1)}%',
-                        style: Theme.of(context).textTheme.headlineSmall,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: result.passed ? AppColors.add : AppColors.delete,
+                            ),
                       ),
-                      const SizedBox(height: AppTheme.mediumSpacing),
-                      _ScoreRow(label: 'Score', value: '${result.score}/${result.totalQuestions}'),
-                      _ScoreRow(
-                        label: 'Correct',
-                        value: '${result.score}',
-                        color: AppColors.add,
-                      ),
-                      _ScoreRow(
-                        label: 'Incorrect',
-                        value: '${result.totalQuestions - result.score}',
-                        color: AppColors.delete,
-                      ),
-                      _ScoreRow(label: 'Topic', value: topic?.name ?? 'Unknown'),
-                      _ScoreRow(label: 'Difficulty', value: result.difficulty),
-                      _ScoreRow(label: 'Date', value: result.createdAt.substring(0, 16).replaceFirst('T', ' ')),
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: AppTheme.mediumSpacing),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isSmallScreen = constraints.maxWidth < 360;
+                  return Wrap(
+                    spacing: AppTheme.smallSpacing,
+                    runSpacing: AppTheme.smallSpacing,
+                    children: [
+                      SizedBox(
+                        width: isSmallScreen ? constraints.maxWidth : (constraints.maxWidth - AppTheme.smallSpacing) / 2,
+                        child: DataCard(
+                          icon: LucideIcons.target,
+                          label: 'Score',
+                          value: '${result.score}/${result.totalQuestions}',
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(
+                        width: isSmallScreen ? constraints.maxWidth : (constraints.maxWidth - AppTheme.smallSpacing) / 2,
+                        child: DataCard(
+                          icon: LucideIcons.checkCircle,
+                          label: 'Correct',
+                          value: '${result.score}',
+                          color: AppColors.add,
+                        ),
+                      ),
+                      SizedBox(
+                        width: isSmallScreen ? constraints.maxWidth : (constraints.maxWidth - AppTheme.smallSpacing) / 2,
+                        child: DataCard(
+                          icon: LucideIcons.xCircle,
+                          label: 'Incorrect',
+                          value: '${result.totalQuestions - result.score}',
+                          color: AppColors.delete,
+                        ),
+                      ),
+                      SizedBox(
+                        width: isSmallScreen ? constraints.maxWidth : (constraints.maxWidth - AppTheme.smallSpacing) / 2,
+                        child: DataCard(
+                          icon: LucideIcons.bookOpen,
+                          label: 'Topic',
+                          value: topic?.name ?? 'Unknown',
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                      SizedBox(
+                        width: isSmallScreen ? constraints.maxWidth : (constraints.maxWidth - AppTheme.smallSpacing) / 2,
+                        child: DataCard(
+                          icon: LucideIcons.layers,
+                          label: 'Difficulty',
+                          value: result.difficulty,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                      SizedBox(
+                        width: isSmallScreen ? constraints.maxWidth : (constraints.maxWidth - AppTheme.smallSpacing) / 2,
+                        child: DataCard(
+                          icon: LucideIcons.calendar,
+                          label: 'Date',
+                          value: result.createdAt.substring(0, 16).replaceFirst('T', ' '),
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AppTheme.largeSpacing),
               Row(
@@ -136,11 +200,11 @@ class _ResultView extends StatelessWidget {
                         AppRoutes.studentDashboard,
                         (route) => false,
                       ),
-                      icon: const Icon(LucideIcons.home),
+                      icon: const Icon(LucideIcons.home, size: 16),
                       label: const Text('Dashboard'),
                     ),
                   ),
-                  const SizedBox(width: AppTheme.mediumSpacing),
+                  const SizedBox(width: AppTheme.smallSpacing),
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => Navigator.pushNamed(
@@ -148,7 +212,7 @@ class _ResultView extends StatelessWidget {
                         AppRoutes.quizReview,
                         arguments: {'resultId': result.id},
                       ),
-                      icon: const Icon(LucideIcons.eye),
+                      icon: const Icon(LucideIcons.eye, size: 16),
                       label: const Text('Review'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.edit,
@@ -167,7 +231,7 @@ class _ResultView extends StatelessWidget {
                     AppRoutes.topicSelect,
                     (route) => false,
                   ),
-                  icon: const Icon(LucideIcons.refreshCcw),
+                  icon: const Icon(LucideIcons.refreshCcw, size: 16),
                   label: const Text('Retry'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.startQuiz,
@@ -179,28 +243,6 @@ class _ResultView extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ScoreRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? color;
-
-  const _ScoreRow({required this.label, required this.value, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-        ],
-      ),
     );
   }
 }

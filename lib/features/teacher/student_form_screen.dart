@@ -3,9 +3,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/validation/validators.dart';
 import '../../models/user.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../core/routes/app_routes.dart';
 
 /// Create or edit a student account.
 class StudentFormScreen extends StatefulWidget {
@@ -25,7 +28,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   final _db = ServiceLocator.db;
 
   bool _isActive = true;
-  bool _isLoading = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -41,37 +44,47 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() => _isSubmitting = true);
 
-    final username = _usernameController.text.trim();
-    final existing = await _db.getUserByUsername(username);
+    try {
+      final username = _usernameController.text.trim();
+      final existing = await _db.getUserByUsername(username);
 
-    if (existing != null && (widget.user == null || existing.id != widget.user!.id)) {
+      if (existing != null && (widget.user == null || existing.id != widget.user!.id)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username is already taken.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      final user = User(
+        id: widget.user?.id,
+        fullName: _fullNameController.text.trim(),
+        username: username,
+        password: _passwordController.text,
+        role: AppConstants.roleStudent,
+        isActive: _isActive,
+      );
+
+      if (widget.user == null) {
+        await _db.insertUser(user);
+      } else {
+        await _db.updateUser(user);
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username is already taken.')),
+        SnackBar(content: Text('Failed to save student: $e'), backgroundColor: Colors.red),
       );
-      setState(() => _isLoading = false);
-      return;
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
-
-    final user = User(
-      id: widget.user?.id,
-      fullName: _fullNameController.text.trim(),
-      username: username,
-      password: _passwordController.text,
-      role: AppConstants.roleStudent,
-      isActive: _isActive,
-    );
-
-    if (widget.user == null) {
-      await _db.insertUser(user);
-    } else {
-      await _db.updateUser(user);
-    }
-
-    if (!mounted) return;
-    Navigator.pop(context);
   }
 
   @override
@@ -80,12 +93,17 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
 
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(isEdit ? 'Edit Student' : 'Add Student'),
+      child: NavigationScaffold(
+        title: isEdit ? 'Edit Student' : 'Add Student',
+        currentRoute: AppRoutes.studentForm,
+        showDrawer: false,
+        body: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: AppTheme.mediumSpacing,
+          right: AppTheme.mediumSpacing,
+          top: AppTheme.mediumSpacing,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.mediumSpacing,
         ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.mediumSpacing),
         child: Form(
           key: _formKey,
           child: Column(
@@ -96,8 +114,12 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                   labelText: 'Full Name',
                   prefixIcon: Icon(LucideIcons.user),
                 ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Full name is required' : null,
+                validator: Validators.compose([
+                  (value) => Validators.required(value),
+                  (value) => Validators.lettersOnly(value),
+                  (value) => Validators.minLength(value, 2, fieldName: 'Full name'),
+                  (value) => Validators.maxLength(value, 50, fieldName: 'Full name'),
+                ]),
               ),
               const SizedBox(height: AppTheme.mediumSpacing),
               TextFormField(
@@ -106,8 +128,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                   labelText: 'Username',
                   prefixIcon: Icon(LucideIcons.atSign),
                 ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Username is required' : null,
+                validator: Validators.username,
               ),
               const SizedBox(height: AppTheme.mediumSpacing),
               TextFormField(
@@ -117,8 +138,11 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                   labelText: 'Password',
                   prefixIcon: Icon(LucideIcons.lock),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Password is required' : null,
+                validator: Validators.compose([
+                  (value) => Validators.required(value),
+                  (value) => Validators.password(value),
+                  (value) => Validators.maxLength(value, 50, fieldName: 'Password'),
+                ]),
               ),
               const SizedBox(height: AppTheme.mediumSpacing),
               SwitchListTile(
@@ -140,8 +164,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                   const SizedBox(width: AppTheme.mediumSpacing),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _save,
-                      icon: _isLoading
+                      onPressed: _isSubmitting ? null : _save,
+                      icon: _isSubmitting
                           ? const SizedBox(
                               width: 18,
                               height: 18,

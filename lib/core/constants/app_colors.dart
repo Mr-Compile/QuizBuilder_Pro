@@ -20,6 +20,10 @@ class AppColors {
   static const Color finishQuiz = Color(0xFFF97316); // Orange
   static const Color login = Color(0xFF10B981); // Emerald Green
   static const Color logout = Color(0xFFEF4444); // Red
+  
+  // Status colors
+  static const Color info = Color(0xFF3B82F6); // Blue
+  static const Color success = Color(0xFF22C55E); // Green
 
   // Background helpers
   static const Color correct = Color(0xFF86EFAC);

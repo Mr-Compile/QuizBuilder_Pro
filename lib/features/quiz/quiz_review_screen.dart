@@ -85,32 +85,59 @@ class _ReviewCard extends StatelessWidget {
         final question = snapshot.data;
         if (question == null) return const SizedBox.shrink();
 
+        final color = answer.isCorrect ? AppColors.add : AppColors.delete;
+
         return Card(
-          color: answer.isCorrect ? AppColors.correct.withValues(alpha: 0.2) : AppColors.incorrect.withValues(alpha: 0.2),
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      answer.isCorrect ? LucideIcons.checkCircle : LucideIcons.xCircle,
-                      color: answer.isCorrect ? AppColors.add : AppColors.delete,
-                    ),
-                    const SizedBox(width: AppTheme.smallSpacing),
-                    Expanded(
-                      child: Text(
-                        question.question,
-                        style: Theme.of(context).textTheme.titleSmall,
+          elevation: 2,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withValues(alpha: 0.1),
+                  color.withValues(alpha: 0.05),
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.cardPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spacing2),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppTheme.roundedLg),
+                        ),
+                        child: Icon(
+                          answer.isCorrect ? LucideIcons.checkCircle : LucideIcons.xCircle,
+                          color: color,
+                          size: 20,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.mediumSpacing),
-                _AnswerRow(label: 'Your answer', value: answer.userAnswer, question: question, isCorrect: answer.isCorrect),
-                _AnswerRow(label: 'Correct answer', value: answer.correctAnswer, question: question, isCorrect: true),
-              ],
+                      const SizedBox(width: AppTheme.smallSpacing),
+                      Expanded(
+                        child: Text(
+                          question.question,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.mediumSpacing),
+                  _AnswerRow(label: 'Your answer', value: answer.userAnswer, question: question, isCorrect: answer.isCorrect),
+                  _AnswerRow(label: 'Correct answer', value: answer.correctAnswer, question: question, isCorrect: true),
+                ],
+              ),
             ),
           ),
         );
@@ -134,22 +161,38 @@ class _AnswerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = question.optionLetterToText(value);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('$label: $value'),
-        Expanded(
-          child: Text(
-            text,
-            textAlign: TextAlign.end,
-            style: TextStyle(
-              color: isCorrect ? AppColors.add : AppColors.delete,
-              fontWeight: FontWeight.bold,
+    final text = value.isEmpty ? 'Not Answered' : question.optionLetterToText(value);
+    final color = isCorrect ? AppColors.add : AppColors.delete;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 0,
+            child: Text(
+              '$label: ${value.isEmpty ? '-' : value}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade700,
+                  ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: AppTheme.smallSpacing),
+          Expanded(
+            child: Text(
+              text,
+              textAlign: TextAlign.end,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: value.isEmpty ? Colors.grey : color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

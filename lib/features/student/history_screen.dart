@@ -8,6 +8,8 @@ import '../../database/database_helper.dart';
 import '../../models/quiz_result.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/navigation_scaffold.dart';
+import '../../widgets/enhanced_cards.dart';
 
 /// Student history of quiz attempts.
 class HistoryScreen extends StatefulWidget {
@@ -43,8 +45,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return RoleGuard(
       allowedRole: AppConstants.roleStudent,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('My History')),
+      child: NavigationScaffold(
+        title: 'My History',
+        currentRoute: AppRoutes.history,
         body: FutureBuilder(
           future: _future,
           builder: (context, snapshot) {
@@ -89,25 +92,28 @@ class _HistoryCard extends StatelessWidget {
       future: db.getTopicById(result.topicId),
       builder: (context, topicSnapshot) {
         final topic = topicSnapshot.data;
-        return Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: result.passed ? AppColors.add : AppColors.delete,
-              child: Icon(
-                result.passed ? LucideIcons.check : LucideIcons.x,
-                color: Colors.white,
-              ),
+        final color = result.passed ? AppColors.add : AppColors.delete;
+
+        return EnhancedListItem(
+          title: '${topic?.name ?? 'Topic'} — ${result.difficulty}',
+          subtitle: '${result.score}/${result.totalQuestions} correct  |  ${result.percentage.toStringAsFixed(1)}%',
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.15),
+            child: Icon(
+              result.passed ? LucideIcons.check : LucideIcons.x,
+              color: color,
             ),
-            title: Text('${topic?.name ?? 'Topic'} — ${result.difficulty}'),
-            subtitle: Text(
-              '${result.score}/${result.totalQuestions} correct  |  ${result.percentage.toStringAsFixed(1)}%',
+          ),
+          trailing: [
+            StatusBadge(
+              label: result.passed ? 'PASS' : 'FAIL',
+              color: color,
             ),
-            trailing: const Icon(LucideIcons.chevronRight),
-            onTap: () => Navigator.pushNamed(
-              context,
-              AppRoutes.quizReview,
-              arguments: {'resultId': result.id},
-            ),
+          ],
+          onTap: () => Navigator.pushNamed(
+            context,
+            AppRoutes.quizReview,
+            arguments: {'resultId': result.id},
           ),
         );
       },
