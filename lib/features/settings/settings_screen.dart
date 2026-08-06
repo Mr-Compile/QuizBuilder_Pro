@@ -132,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Widget _buildThemeTile(String label, ThemeMode mode, QuizForgeAppState? app) {
+  Widget _buildThemeTile(String label, ThemeMode mode, QuizBuilderProAppState? app) {
     final selected = (app?.themeMode ?? ThemeMode.system) == mode;
     return ListTile(
       leading: Icon(
@@ -148,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final app = QuizForgeApp.of(context);
+    final app = QuizBuilderProApp.of(context);
 
     return Scaffold(
       appBar: AppBar(

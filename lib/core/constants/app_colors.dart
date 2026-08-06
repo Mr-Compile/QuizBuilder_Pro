@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Static color palette used throughout QuizForge AI.
+/// Static color palette used throughout QuizBuilder Pro.
 /// These colors are intentionally simple so the theme files can mix them with
 /// Material 3 dynamic colors.
 class AppColors {

@@ -1,8 +1,8 @@
-/// Global, human-readable constants used by the QuizForge AI app.
+/// Global, human-readable constants used by the QuizBuilder Pro app.
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'QuizForge AI';
+  static const String appName = 'QuizBuilder Pro';
   static const String appTagline = 'Create, learn, and practice quizzes online or offline.';
 
   static const String defaultTeacherUsername = 'teacher';

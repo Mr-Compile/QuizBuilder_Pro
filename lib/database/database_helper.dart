@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 import '../core/constants/app_constants.dart';
 import '../models/quiz_answer.dart';
 import '../models/quiz_result.dart';
@@ -9,7 +8,7 @@ import '../models/question.dart';
 import '../models/topic.dart';
 import '../models/user.dart';
 
-/// Singleton helper that manages the SQLite database for QuizForge AI.
+/// Singleton helper that manages the SQLite database for QuizBuilder Pro.
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -18,7 +17,7 @@ class DatabaseHelper {
 
   DatabaseHelper._internal();
 
-  static const String _dbName = 'quizforge_ai.db';
+  static const String _dbName = 'quizbuilder_pro.db';
   static const int _dbVersion = 2;
 
   Future<Database> get database async {
@@ -27,12 +26,6 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    // Ensure FFI factory is initialized for desktop platforms
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-    }
-
     final databasesPath = await getDatabasesPath();
     final path = join(databasesPath, _dbName);
 
