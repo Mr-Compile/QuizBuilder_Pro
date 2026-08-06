@@ -154,6 +154,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Settings'),
         elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(LucideIcons.brain),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Open menu',
+          ),
+        ),
       ),
       drawer: EnhancedDrawer(
         currentRoute: AppRoutes.settings,

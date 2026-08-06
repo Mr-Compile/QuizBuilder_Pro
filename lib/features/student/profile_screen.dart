@@ -132,6 +132,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         appBar: AppBar(
           title: const Text('My Profile'),
           elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(LucideIcons.brain),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
         ),
         drawer: EnhancedDrawer(
           currentRoute: AppRoutes.profile,

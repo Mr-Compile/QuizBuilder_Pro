@@ -83,6 +83,13 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
         appBar: AppBar(
           title: const Text('Manage Topics'),
           elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(LucideIcons.brain),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
           actions: [
             PermissionGuard(
               permission: AppPermissions.createTopics,

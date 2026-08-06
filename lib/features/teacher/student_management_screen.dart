@@ -86,6 +86,13 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
         appBar: AppBar(
           title: const Text('Manage Students'),
           elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(LucideIcons.brain),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
           actions: [
             PermissionGuard(
               permission: AppPermissions.createUsers,

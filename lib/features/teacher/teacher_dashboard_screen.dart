@@ -33,6 +33,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         appBar: AppBar(
           title: const Text('Teacher Dashboard'),
           elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(LucideIcons.brain),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
           actions: [
             IconButton(
               icon: const Icon(LucideIcons.logOut, color: AppColors.logout),

@@ -182,6 +182,13 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
         appBar: AppBar(
           title: const Text('AI Question Generation'),
           elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(LucideIcons.brain),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
         ),
         drawer: EnhancedDrawer(
           currentRoute: AppRoutes.aiGenerate,

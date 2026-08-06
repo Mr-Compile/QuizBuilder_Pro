@@ -97,6 +97,13 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         appBar: AppBar(
           title: const Text('Manage Questions'),
           elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(LucideIcons.brain),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Open menu',
+            ),
+          ),
           actions: [
             PermissionGuard(
               permission: AppPermissions.createQuestions,
