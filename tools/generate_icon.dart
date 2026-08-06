@@ -61,8 +61,8 @@ void _drawBrainHemisphere(Image image, int centerX, int centerY, int radius, Col
 
 void _drawBrainStem(Image image, int centerX, int centerY, ColorRgb8 mainColor, ColorRgb8 bgColor) {
   // Brain stem - rectangular shape at bottom
-  final stemWidth = 40;
-  final stemHeight = 50;
+  const stemWidth = 40;
+  const stemHeight = 50;
   
   for (int y = centerY; y < centerY + stemHeight; y++) {
     for (int x = centerX - stemWidth ~/ 2; x < centerX + stemWidth ~/ 2; x++) {
