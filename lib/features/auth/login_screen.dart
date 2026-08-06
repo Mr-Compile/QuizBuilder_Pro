@@ -7,7 +7,13 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/dialog_helper.dart';
 import '../../services/service_locator.dart';
 
-/// Local login screen.
+// Spacing constants for better readability
+const double _smallSpacing = AppTheme.spacing2;
+const double _mediumSpacing = AppTheme.spacing4;
+const double _largeSpacing = AppTheme.spacing6;
+const double _cardPadding = AppTheme.spacing6;
+
+/// Local login screen with enhanced UI.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -50,71 +56,130 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppTheme.largeSpacing),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppTheme.cardPadding),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    LucideIcons.brain,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: AppTheme.smallSpacing),
-                  Text(
-                    AppConstants.appName,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: AppTheme.smallSpacing),
-                  Text(
-                    'Login with your username and password',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppTheme.largeSpacing),
-                  TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      prefixIcon: Icon(LucideIcons.user),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              Theme.of(context).colorScheme.surface,
+            ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(_largeSpacing),
+            child: Card(
+              elevation: 8,
+              shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              child: Padding(
+                padding: const EdgeInsets.all(_cardPadding),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      LucideIcons.brain,
+                      size: 72,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                  ),
-                  const SizedBox(height: AppTheme.mediumSpacing),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(LucideIcons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    const SizedBox(height: _mediumSpacing),
+                    Text(
+                      AppConstants.appName,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                    const SizedBox(height: _smallSpacing),
+                    Text(
+                      AppConstants.appTagline,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: _largeSpacing),
+                    TextField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        prefixIcon: const Icon(LucideIcons.user),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surface,
+                      ),
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                    ),
+                    const SizedBox(height: _mediumSpacing),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(LucideIcons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surface,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _login(),
+                    ),
+                    const SizedBox(height: _largeSpacing),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _login,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(LucideIcons.logIn),
+                        label: const Text('Login', style: TextStyle(fontSize: 16)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.login,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.roundedLg),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppTheme.largeSpacing),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _login,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(LucideIcons.logIn),
-                      label: const Text('Login'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.login,
-                        foregroundColor: Colors.white,
+                    const SizedBox(height: _mediumSpacing),
+                    Container(
+                      padding: const EdgeInsets.all(_smallSpacing),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(AppTheme.roundedLg),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Default Credentials',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Admin: admin / admin123',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey.shade600,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

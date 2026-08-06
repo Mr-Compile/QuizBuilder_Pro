@@ -6,6 +6,13 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/enhanced_cards.dart';
+import '../../widgets/enhanced_navigation.dart';
+
+// Spacing constants for better readability
+const double _smallSpacing = AppTheme.spacing2;
+const double _mediumSpacing = AppTheme.spacing4;
+const double _largeSpacing = AppTheme.spacing6;
 
 /// Teacher dashboard with summary cards and quick actions.
 class TeacherDashboardScreen extends StatefulWidget {
@@ -25,6 +32,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Teacher Dashboard'),
+          elevation: 0,
           actions: [
             IconButton(
               icon: const Icon(LucideIcons.logOut, color: AppColors.logout),
@@ -33,7 +41,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ],
         ),
-        drawer: _buildDrawer(context),
+        drawer: EnhancedDrawer(
+          currentRoute: AppRoutes.teacherDashboard,
+          onLogout: _logout,
+        ),
         body: FutureBuilder(
           future: _loadSummary(),
           builder: (context, snapshot) {
@@ -42,102 +53,155 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             }
             final data = snapshot.data ?? Summary(0, 0, 0, 0, 0);
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.mediumSpacing),
+              padding: const EdgeInsets.all(_mediumSpacing),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Overview',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppTheme.smallSpacing),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: AppTheme.smallSpacing,
-                    crossAxisSpacing: AppTheme.smallSpacing,
-                    children: [
-                      _SummaryCard(
-                        label: 'Total Students',
-                        value: data.totalStudents.toString(),
-                        icon: LucideIcons.users,
-                        color: AppColors.primary,
-                      ),
-                      _SummaryCard(
-                        label: 'Active Students',
-                        value: data.activeStudents.toString(),
-                        icon: LucideIcons.userCheck,
-                        color: AppColors.add,
-                      ),
-                      _SummaryCard(
-                        label: 'Topics',
-                        value: data.topics.toString(),
-                        icon: LucideIcons.bookOpen,
-                        color: AppColors.secondary,
-                      ),
-                      _SummaryCard(
-                        label: 'Questions',
-                        value: data.questions.toString(),
-                        icon: LucideIcons.helpCircle,
-                        color: AppColors.accent,
-                      ),
-                      _SummaryCard(
-                        label: 'Quiz Attempts',
-                        value: data.attempts.toString(),
-                        icon: LucideIcons.clipboardList,
-                        color: AppColors.edit,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.largeSpacing),
-                  Text(
-                    'Quick Actions',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppTheme.smallSpacing),
-                  _QuickAction(
-                    icon: LucideIcons.users,
-                    label: 'Manage Students',
-                    color: AppColors.primary,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
-                  ),
-                  _QuickAction(
-                    icon: LucideIcons.bookOpen,
-                    label: 'Manage Topics',
-                    color: AppColors.secondary,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
-                  ),
-                  _QuickAction(
-                    icon: LucideIcons.helpCircle,
-                    label: 'Manage Questions',
-                    color: AppColors.accent,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
-                  ),
-                  _QuickAction(
-                    icon: LucideIcons.wand2,
-                    label: 'Generate AI Questions',
-                    color: AppColors.startQuiz,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.aiGenerate),
-                  ),
-                  _QuickAction(
-                    icon: LucideIcons.clipboardList,
-                    label: 'All Results',
-                    color: AppColors.edit,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.results),
-                  ),
-                  _QuickAction(
-                    icon: LucideIcons.barChart2,
-                    label: 'Global Statistics',
-                    color: AppColors.add,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.teacherStatistics),
-                  ),
+                  _buildHeader(context),
+                  const SizedBox(height: _largeSpacing),
+                  _buildSummaryCards(context, data),
+                  const SizedBox(height: _largeSpacing),
+                  _buildQuickActions(context),
                 ],
               ),
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Welcome Back!',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Here\'s what\'s happening with your classes today.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCards(BuildContext context, Summary data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Overview',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: _mediumSpacing),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: _mediumSpacing,
+          crossAxisSpacing: _mediumSpacing,
+          childAspectRatio: 1.2,
+          children: [
+            EnhancedSummaryCard(
+              label: 'Total Students',
+              value: data.totalStudents.toString(),
+              icon: LucideIcons.users,
+              color: AppColors.primary,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
+            ),
+            EnhancedSummaryCard(
+              label: 'Active Students',
+              value: data.activeStudents.toString(),
+              icon: LucideIcons.userCheck,
+              color: AppColors.add,
+            ),
+            EnhancedSummaryCard(
+              label: 'Topics',
+              value: data.topics.toString(),
+              icon: LucideIcons.bookOpen,
+              color: AppColors.secondary,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
+            ),
+            EnhancedSummaryCard(
+              label: 'Questions',
+              value: data.questions.toString(),
+              icon: LucideIcons.helpCircle,
+              color: AppColors.accent,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
+            ),
+            EnhancedSummaryCard(
+              label: 'Quiz Attempts',
+              value: data.attempts.toString(),
+              icon: LucideIcons.clipboardList,
+              color: AppColors.edit,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.results),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: _mediumSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.users,
+          label: 'Manage Students',
+          subtitle: 'Add, edit, or deactivate student accounts',
+          color: AppColors.primary,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.bookOpen,
+          label: 'Manage Topics',
+          subtitle: 'Create and organize quiz topics',
+          color: AppColors.secondary,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.helpCircle,
+          label: 'Manage Questions',
+          subtitle: 'Add, edit, or remove quiz questions',
+          color: AppColors.accent,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.wand2,
+          label: 'Generate AI Questions',
+          subtitle: 'Create questions using AI assistance',
+          color: AppColors.startQuiz,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.aiGenerate),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.barChart2,
+          label: 'View Statistics',
+          subtitle: 'Analyze performance and trends',
+          color: AppColors.add,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.teacherStatistics),
+        ),
+      ],
     );
   }
 
@@ -157,72 +221,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       await _db.countResults(),
     );
   }
-
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  LucideIcons.brain,
-                  size: 64,
-                  color: Colors.white,
-                ),
-                SizedBox(height: AppTheme.smallSpacing),
-                Text(
-                  AppConstants.appName,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(LucideIcons.home),
-            title: const Text('Dashboard'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(LucideIcons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushNamed(AppRoutes.settings);
-            },
-          ),
-          ListTile(
-            leading: const Icon(LucideIcons.info),
-            title: const Text('About'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushNamed(AppRoutes.about);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(LucideIcons.logOut, color: AppColors.logout),
-            title: const Text('Logout', style: TextStyle(color: AppColors.logout)),
-            onTap: () {
-              Navigator.pop(context);
-              _logout();
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class Summary {
@@ -233,76 +231,4 @@ class Summary {
   final int attempts;
 
   Summary(this.totalStudents, this.activeStudents, this.topics, this.questions, this.attempts);
-}
-
-class _SummaryCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _SummaryCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.cardPadding),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: AppTheme.smallSpacing),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.15),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(label),
-        trailing: const Icon(LucideIcons.chevronRight),
-        onTap: onTap,
-      ),
-    );
-  }
 }

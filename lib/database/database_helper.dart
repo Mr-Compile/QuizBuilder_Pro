@@ -18,7 +18,7 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static const String _dbName = 'quizforge_ai.db';
-  static const int _dbVersion = 1;
+  static const int _dbVersion = 2;
 
   Future<Database> get database async {
     _database ??= await _initDatabase();
@@ -33,6 +33,7 @@ class DatabaseHelper {
       path,
       version: _dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -40,6 +41,19 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await _createTables(db);
+    await _createIndexes(db);
+    await _seedDatabase(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createAiGenerationsTable(db);
+      await _createIndexes(db);
+    }
+  }
+
+  Future<void> _createTables(Database db) async {
     // Users table
     await db.execute('''
       CREATE TABLE users (
@@ -112,7 +126,31 @@ class DatabaseHelper {
       )
     ''');
 
-    await _seedDatabase(db);
+    await _createAiGenerationsTable(db);
+  }
+
+  Future<void> _createAiGenerationsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ai_generations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_by INTEGER NOT NULL,
+        topic_id INTEGER NOT NULL,
+        difficulty TEXT NOT NULL,
+        count INTEGER NOT NULL,
+        generated_at TEXT NOT NULL,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  Future<void> _createIndexes(Database db) async {
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions(topic_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON questions(difficulty)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_quiz_results_user ON quiz_results(user_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_quiz_results_topic ON quiz_results(topic_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_quiz_answers_result ON quiz_answers(result_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_ai_generations_created_by ON ai_generations(created_by)');
   }
 
   /// Inserts the default sample data required by the project brief.
@@ -404,10 +442,66 @@ class DatabaseHelper {
     return maps.map(QuizResult.fromMap).toList();
   }
 
+  Future<List<QuizResult>> getResultsForStudent(int userId) async {
+    final db = await database;
+    final maps = await db.query(
+      'quiz_results',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'created_at DESC',
+    );
+    return maps.map(QuizResult.fromMap).toList();
+  }
+
   Future<int> countResults() async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM quiz_results');
     return (result.first['count'] as int?) ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> getTopicPerformanceForStudent(int userId) async {
+    final db = await database;
+    return db.rawQuery('''
+      SELECT 
+        t.id as topic_id,
+        t.name as topic_name,
+        COUNT(qr.id) as attempts,
+        AVG(qr.percentage) as avg_percentage,
+        MAX(qr.percentage) as best_percentage,
+        SUM(qr.total_questions) as total_questions,
+        SUM(qr.score) as total_correct
+      FROM quiz_results qr
+      JOIN topics t ON qr.topic_id = t.id
+      WHERE qr.user_id = ?
+      GROUP BY t.id
+      ORDER BY avg_percentage ASC
+    ''', [userId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getWrongAnswersForStudent(int userId, {int limit = 50}) async {
+    final db = await database;
+    return db.rawQuery('''
+      SELECT DISTINCT
+        q.id,
+        q.topic_id,
+        q.question,
+        q.option_a,
+        q.option_b,
+        q.option_c,
+        q.option_d,
+        q.correct_answer,
+        q.difficulty,
+        q.category,
+        t.name as topic_name,
+        qa.user_answer as last_user_answer
+      FROM quiz_answers qa
+      JOIN quiz_results qr ON qa.result_id = qr.id
+      JOIN questions q ON qa.question_id = q.id
+      JOIN topics t ON q.topic_id = t.id
+      WHERE qr.user_id = ? AND qa.is_correct = 0
+      ORDER BY qr.created_at DESC
+      LIMIT ?
+    ''', [userId, limit]);
   }
 
   // ---------------- Quiz Answers ----------------
@@ -435,5 +529,58 @@ class DatabaseHelper {
       orderBy: 'id ASC',
     );
     return maps.map(QuizAnswer.fromMap).toList();
+  }
+
+  // ---------------- AI Generation History ----------------
+
+  Future<int> recordAiGeneration({
+    required int createdBy,
+    required int topicId,
+    required String difficulty,
+    required int count,
+    required String generatedAt,
+  }) async {
+    final db = await database;
+    return db.insert('ai_generations', {
+      'created_by': createdBy,
+      'topic_id': topicId,
+      'difficulty': difficulty,
+      'count': count,
+      'generated_at': generatedAt,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getAiGenerationHistory({
+    int? createdBy,
+    int? topicId,
+    int limit = 50,
+  }) async {
+    final db = await database;
+    final where = <String>[];
+    final whereArgs = <dynamic>[];
+
+    if (createdBy != null) {
+      where.add('created_by = ?');
+      whereArgs.add(createdBy);
+    }
+    if (topicId != null) {
+      where.add('topic_id = ?');
+      whereArgs.add(topicId);
+    }
+
+    final maps = await db.query(
+      'ai_generations',
+      where: where.isNotEmpty ? where.join(' AND ') : null,
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'generated_at DESC',
+      limit: limit,
+    );
+    return maps;
+  }
+
+  Future<int> countAiGenerations() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM ai_generations');
+    return (result.first['count'] as int?) ?? 0;
   }
 }

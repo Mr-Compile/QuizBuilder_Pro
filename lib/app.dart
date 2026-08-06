@@ -12,14 +12,17 @@ import 'features/quiz/difficulty_selection_screen.dart';
 import 'features/quiz/quiz_result_screen.dart';
 import 'features/quiz/quiz_review_screen.dart';
 import 'features/quiz/quiz_screen.dart';
+import 'features/quiz/review_wrong_answers_screen.dart';
 import 'features/quiz/topic_selection_screen.dart';
 import 'features/settings/about_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/statistics/student_statistics_screen.dart';
 import 'features/statistics/teacher_statistics_screen.dart';
 import 'features/student/history_screen.dart';
+import 'features/student/profile_screen.dart';
 import 'features/student/student_dashboard_screen.dart';
 import 'features/teacher/results_screen.dart';
+import 'features/teacher/student_detail_screen.dart';
 import 'features/teacher/student_form_screen.dart';
 import 'features/teacher/student_management_screen.dart';
 import 'features/teacher/teacher_dashboard_screen.dart';
@@ -117,6 +120,8 @@ class QuizForgeAppState extends State<QuizForgeApp> {
         return MaterialPageRoute(builder: (_) => const StudentManagementScreen());
       case AppRoutes.studentForm:
         return MaterialPageRoute(builder: (_) => StudentFormScreen(user: args?['user']));
+      case AppRoutes.studentDetail:
+        return MaterialPageRoute(builder: (_) => StudentDetailScreen(student: args?['student']));
       case AppRoutes.topicManagement:
         return MaterialPageRoute(builder: (_) => const TopicManagementScreen());
       case AppRoutes.topicForm:
@@ -158,6 +163,10 @@ class QuizForgeAppState extends State<QuizForgeApp> {
         return MaterialPageRoute(builder: (_) => const HistoryScreen());
       case AppRoutes.studentStatistics:
         return MaterialPageRoute(builder: (_) => const StudentStatisticsScreen());
+      case AppRoutes.reviewWrongAnswers:
+        return MaterialPageRoute(builder: (_) => const ReviewWrongAnswersScreen());
+      case AppRoutes.profile:
+        return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
       case AppRoutes.about:

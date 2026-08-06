@@ -9,6 +9,7 @@ class AppRoutes {
   static const String teacherDashboard = '/teacher/dashboard';
   static const String studentManagement = '/teacher/students';
   static const String studentForm = '/teacher/students/form';
+  static const String studentDetail = '/teacher/students/detail';
   static const String topicManagement = '/teacher/topics';
   static const String topicForm = '/teacher/topics/form';
   static const String questionManagement = '/teacher/questions';
@@ -24,6 +25,8 @@ class AppRoutes {
   static const String quiz = '/student/quiz';
   static const String quizResult = '/student/result';
   static const String quizReview = '/student/review';
+  static const String reviewWrongAnswers = '/student/review-wrong';
+  static const String profile = '/student/profile';
   static const String history = '/student/history';
   static const String studentStatistics = '/student/statistics';
 

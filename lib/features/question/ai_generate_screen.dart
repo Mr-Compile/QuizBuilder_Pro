@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/dialog_helper.dart';
 import '../../models/question.dart';
@@ -9,6 +10,7 @@ import '../../models/topic.dart';
 import '../../services/groq_ai_service.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/enhanced_navigation.dart';
 
 /// Generate quiz questions with the Groq AI API and save selected ones.
 class AiGenerateScreen extends StatefulWidget {
@@ -34,12 +36,24 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
   bool _isGenerating = false;
   bool _isSaving = false;
 
+  static const double _smallSpacing = AppTheme.spacing2;
+  static const double _mediumSpacing = AppTheme.spacing4;
+
   @override
   void initState() {
     super.initState();
     _groqFuture = ServiceLocator.groq;
     _topicsFuture = _loadTopics();
     _selectedDifficulty = AppConstants.difficultyEasy;
+    _loadApiKey();
+  }
+
+  Future<void> _loadApiKey() async {
+    final groq = await _groqFuture;
+    final key = await groq.getApiKey();
+    if (key != null && _apiKeyController.text.isEmpty) {
+      setState(() => _apiKeyController.text = key);
+    }
   }
 
   Future<List<Topic>> _loadTopics() async {
@@ -56,7 +70,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
     await groq.saveApiKey(_apiKeyController.text.trim());
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('API key saved')),
+      const SnackBar(content: Text('API key saved securely')),
     );
   }
 
@@ -80,10 +94,21 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
       return;
     }
 
+    final groq = await _groqFuture;
+    final valid = await groq.hasValidApiKey();
+    if (!mounted) return;
+    if (!valid) {
+      await DialogHelper.showError(
+        context,
+        'A valid Groq API key starting with "gsk_" is required. Add it in the field above or in Settings.',
+        title: 'Invalid API key',
+      );
+      return;
+    }
+
     setState(() => _isGenerating = true);
 
     try {
-      final groq = await _groqFuture;
       final questions = await groq.generateQuestions(
         topicId: _selectedTopic!.id!,
         difficulty: _selectedDifficulty!,
@@ -98,7 +123,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
     } catch (e) {
       if (!mounted) return;
       final message = e.toString().replaceFirst('Exception: ', '');
-      if (message.contains('No internet')) {
+      if (message.contains('internet') || message.contains('network')) {
         await DialogHelper.showNoInternet(context, onRetry: _generate);
       } else {
         await DialogHelper.showError(context, message, onRetry: _generate);
@@ -154,7 +179,14 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
     return RoleGuard(
       allowedRole: AppConstants.roleTeacher,
       child: Scaffold(
-        appBar: AppBar(title: const Text('AI Question Generation')),
+        appBar: AppBar(
+          title: const Text('AI Question Generation'),
+          elevation: 0,
+        ),
+        drawer: EnhancedDrawer(
+          currentRoute: AppRoutes.aiGenerate,
+          onLogout: _logout,
+        ),
         body: FutureBuilder(
           future: _topicsFuture,
           builder: (context, snapshot) {
@@ -163,139 +195,15 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
             }
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.mediumSpacing),
+              padding: const EdgeInsets.all(_mediumSpacing),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppTheme.cardPadding),
-                      child: Column(
-                        children: [
-                          FutureBuilder(
-                            future: _groqFuture,
-                            builder: (context, groqSnapshot) {
-                              final key = groqSnapshot.hasData
-                                  ? groqSnapshot.data!.getApiKey()
-                                  : null;
-                              if (key != null && _apiKeyController.text.isEmpty) {
-                                _apiKeyController.text = key;
-                              }
-                              return TextField(
-                                controller: _apiKeyController,
-                                obscureText: true,
-                                decoration: InputDecoration(
-                                  labelText: 'Groq API Key',
-                                  prefixIcon: const Icon(LucideIcons.key),
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(LucideIcons.save, color: AppColors.add),
-                                    onPressed: _saveApiKey,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: AppTheme.mediumSpacing),
-                          DropdownButtonFormField<Topic?>(
-                            initialValue: _selectedTopic,
-                            decoration: const InputDecoration(labelText: 'Topic'),
-                            items: _topics
-                                .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
-                                .toList(),
-                            onChanged: (value) => setState(() => _selectedTopic = value),
-                          ),
-                          const SizedBox(height: AppTheme.mediumSpacing),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<String?>(
-                                  initialValue: _selectedDifficulty,
-                                  decoration: const InputDecoration(labelText: 'Difficulty'),
-                                  items: const [
-                                    DropdownMenuItem(value: AppConstants.difficultyEasy, child: Text('Easy')),
-                                    DropdownMenuItem(value: AppConstants.difficultyMedium, child: Text('Medium')),
-                                    DropdownMenuItem(value: AppConstants.difficultyHard, child: Text('Hard')),
-                                  ],
-                                  onChanged: (value) => setState(() => _selectedDifficulty = value),
-                                ),
-                              ),
-                              const SizedBox(width: AppTheme.smallSpacing),
-                              Expanded(
-                                child: TextField(
-                                  controller: _quantityController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Quantity',
-                                    prefixIcon: Icon(LucideIcons.hash),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppTheme.mediumSpacing),
-                          TextField(
-                            controller: _categoryController,
-                            decoration: const InputDecoration(
-                              labelText: 'Category',
-                              prefixIcon: Icon(LucideIcons.tag),
-                            ),
-                          ),
-                          const SizedBox(height: AppTheme.largeSpacing),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _isGenerating ? null : _generate,
-                              icon: _isGenerating
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(LucideIcons.wand),
-                              label: const Text('Generate Questions'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.startQuiz,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.largeSpacing),
-                  if (_generated.isNotEmpty) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Generated Questions', style: Theme.of(context).textTheme.titleLarge),
-                        TextButton.icon(
-                          onPressed: _isSaving ? null : _saveSelected,
-                          icon: _isSaving
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(LucideIcons.save),
-                          label: const Text('Save Selected'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppTheme.smallSpacing),
-                    ...List.generate(_generated.length, (index) {
-                      final q = _generated[index];
-                      return Card(
-                        child: CheckboxListTile(
-                          value: _selected[index],
-                          onChanged: (value) => setState(() => _selected[index] = value ?? false),
-                          title: Text(q.question, maxLines: 3, overflow: TextOverflow.ellipsis),
-                          subtitle: Text('A: ${q.optionA}  B: ${q.optionB}\nCorrect: ${q.correctAnswer}'),
-                          isThreeLine: true,
-                        ),
-                      );
-                    }),
-                  ],
+                  _buildApiKeyCard(context),
+                  const SizedBox(height: _mediumSpacing),
+                  _buildGeneratorCard(context),
+                  const SizedBox(height: _mediumSpacing),
+                  _buildResultsSection(context),
                 ],
               ),
             );
@@ -303,6 +211,189 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildApiKeyCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(_mediumSpacing),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Groq API Key', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: _smallSpacing),
+            TextField(
+              controller: _apiKeyController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'API Key',
+                hintText: 'Enter your Groq API key starting with gsk_',
+                prefixIcon: const Icon(LucideIcons.key),
+                suffixIcon: IconButton(
+                  icon: const Icon(LucideIcons.save, color: AppColors.add),
+                  onPressed: _saveApiKey,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+              ),
+            ),
+            const SizedBox(height: _smallSpacing),
+            Text(
+              'Stored securely using platform encryption. Only teachers can view or change this key.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeneratorCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(_mediumSpacing),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Generate Questions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: _mediumSpacing),
+            DropdownButtonFormField<Topic?>(
+              initialValue: _selectedTopic,
+              decoration: const InputDecoration(
+                labelText: 'Topic',
+                filled: true,
+              ),
+              items: _topics.map((t) => DropdownMenuItem(value: t, child: Text(t.name))).toList(),
+              onChanged: (value) => setState(() => _selectedTopic = value),
+            ),
+            const SizedBox(height: _mediumSpacing),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _selectedDifficulty,
+                    decoration: const InputDecoration(
+                      labelText: 'Difficulty',
+                      filled: true,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: AppConstants.difficultyEasy, child: Text('Easy')),
+                      DropdownMenuItem(value: AppConstants.difficultyMedium, child: Text('Medium')),
+                      DropdownMenuItem(value: AppConstants.difficultyHard, child: Text('Hard')),
+                    ],
+                    onChanged: (value) => setState(() => _selectedDifficulty = value),
+                  ),
+                ),
+                const SizedBox(width: _smallSpacing),
+                Expanded(
+                  child: TextField(
+                    controller: _quantityController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantity',
+                      hintText: '1-20',
+                      filled: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: _mediumSpacing),
+            TextField(
+              controller: _categoryController,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                filled: true,
+              ),
+            ),
+            const SizedBox(height: _mediumSpacing),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _isGenerating ? null : _generate,
+                icon: _isGenerating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(LucideIcons.wand2),
+                label: Text(_isGenerating ? 'Generating...' : 'Generate Questions'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.startQuiz,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsSection(BuildContext context) {
+    if (_generated.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Generated Questions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            TextButton.icon(
+              onPressed: () => setState(() {
+                final allSelected = _selected.every((s) => s);
+                _selected = List.generate(_selected.length, (_) => !allSelected);
+              }),
+              icon: const Icon(LucideIcons.checkSquare),
+              label: const Text('Toggle all'),
+            ),
+          ],
+        ),
+        const SizedBox(height: _smallSpacing),
+        ...List.generate(_generated.length, (index) {
+          final q = _generated[index];
+          return Card(
+            child: CheckboxListTile(
+              value: _selected[index],
+              onChanged: (value) => setState(() => _selected[index] = value ?? false),
+              title: Text(q.question, maxLines: 2, overflow: TextOverflow.ellipsis),
+              subtitle: Text('Correct: ${q.correctAnswer}  |  Category: ${q.category}'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          );
+        }),
+        const SizedBox(height: _mediumSpacing),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _isSaving ? null : _saveSelected,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(LucideIcons.save),
+            label: Text(_isSaving ? 'Saving...' : 'Save Selected'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.add,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _logout() async {
+    final auth = await ServiceLocator.auth;
+    await auth.logout();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   @override

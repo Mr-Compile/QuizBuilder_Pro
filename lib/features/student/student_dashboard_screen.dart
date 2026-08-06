@@ -7,6 +7,13 @@ import '../../core/theme/app_theme.dart';
 import '../../models/user.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/role_guard.dart';
+import '../../widgets/enhanced_cards.dart';
+import '../../widgets/enhanced_navigation.dart';
+
+// Spacing constants for better readability
+const double _smallSpacing = AppTheme.spacing2;
+const double _mediumSpacing = AppTheme.spacing4;
+const double _largeSpacing = AppTheme.spacing6;
 
 /// Student dashboard with quick access to topics, history and statistics.
 class StudentDashboardScreen extends StatefulWidget {
@@ -41,72 +48,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  LucideIcons.brain,
-                  size: 64,
-                  color: Colors.white,
-                ),
-                SizedBox(height: AppTheme.smallSpacing),
-                Text(
-                  AppConstants.appName,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(LucideIcons.home),
-            title: const Text('Dashboard'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(LucideIcons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushNamed(AppRoutes.settings);
-            },
-          ),
-          ListTile(
-            leading: const Icon(LucideIcons.info),
-            title: const Text('About'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushNamed(AppRoutes.about);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(LucideIcons.logOut, color: AppColors.logout),
-            title: const Text('Logout', style: TextStyle(color: AppColors.logout)),
-            onTap: () {
-              Navigator.pop(context);
-              _logout();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
@@ -114,6 +55,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Student Dashboard'),
+          elevation: 0,
           actions: [
             IconButton(
               icon: const Icon(LucideIcons.logOut, color: AppColors.logout),
@@ -122,102 +64,123 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             ),
           ],
         ),
-        drawer: _buildDrawer(context),
+        drawer: EnhancedDrawer(
+          currentRoute: AppRoutes.studentDashboard,
+          onLogout: _logout,
+        ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppTheme.mediumSpacing),
+          padding: const EdgeInsets.all(_mediumSpacing),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Welcome, ${_user?.fullName ?? 'Student'}!',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: AppTheme.smallSpacing),
-              Text(
-                'Choose a topic and difficulty to start practicing.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppTheme.largeSpacing),
-              FutureBuilder(
-                future: _attemptsFuture,
-                builder: (context, snapshot) {
-                  final attempts = snapshot.data ?? 0;
-                  return _QuickAction(
-                    icon: LucideIcons.clipboardList,
-                    label: 'Quizzes Taken',
-                    value: attempts.toString(),
-                    color: AppColors.primary,
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.history),
-                  );
-                },
-              ),
-              const SizedBox(height: AppTheme.largeSpacing),
-              Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: AppTheme.smallSpacing),
-              _QuickAction(
-                icon: LucideIcons.bookOpen,
-                label: 'Browse Topics',
-                color: AppColors.secondary,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.topicSelect),
-              ),
-              _QuickAction(
-                icon: LucideIcons.history,
-                label: 'My History',
-                color: AppColors.edit,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.history),
-              ),
-              _QuickAction(
-                icon: LucideIcons.barChart2,
-                label: 'My Statistics',
-                color: AppColors.add,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.studentStatistics),
-              ),
-              _QuickAction(
-                icon: LucideIcons.settings,
-                label: 'Settings',
-                color: AppColors.cancel,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
-              ),
+              _buildHeader(context),
+              const SizedBox(height: _largeSpacing),
+              _buildStatsCard(context),
+              const SizedBox(height: _largeSpacing),
+              _buildQuickActions(context),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class _QuickAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  final String? value;
-
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.15),
-          child: Icon(icon, color: color),
+  Widget _buildHeader(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Welcome, ${_user?.fullName ?? 'Student'}!',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
-        title: Text(label),
-        trailing: value != null
-            ? Text(
-                value!,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: color),
-              )
-            : const Icon(LucideIcons.chevronRight),
-        onTap: onTap,
-      ),
+        const SizedBox(height: 4),
+        Text(
+          'Ready to learn? Choose a topic and start practicing.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsCard(BuildContext context) {
+    return FutureBuilder(
+      future: _attemptsFuture,
+      builder: (context, snapshot) {
+        final attempts = snapshot.data ?? 0;
+        return EnhancedSummaryCard(
+          label: 'Quizzes Completed',
+          value: attempts.toString(),
+          icon: LucideIcons.clipboardList,
+          color: AppColors.primary,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.history),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: _mediumSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.bookOpen,
+          label: 'Browse Topics',
+          subtitle: 'Explore available quiz topics',
+          color: AppColors.secondary,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.topicSelect),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.history,
+          label: 'My History',
+          subtitle: 'View past quiz results',
+          color: AppColors.edit,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.history),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.barChart2,
+          label: 'My Statistics',
+          subtitle: 'Track your learning progress',
+          color: AppColors.add,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.studentStatistics),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.bookX,
+          label: 'Review Mistakes',
+          subtitle: 'Practice questions you got wrong',
+          color: AppColors.delete,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.reviewWrongAnswers),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.user,
+          label: 'My Profile',
+          subtitle: 'Update your name or password',
+          color: AppColors.accent,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+        ),
+        const SizedBox(height: _smallSpacing),
+        EnhancedActionCard(
+          icon: LucideIcons.settings,
+          label: 'Settings',
+          subtitle: 'Customize your experience',
+          color: AppColors.cancel,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
+        ),
+      ],
     );
   }
 }
