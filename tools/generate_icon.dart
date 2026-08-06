@@ -5,39 +5,24 @@ void main() {
   // Create a 512x512 image
   final image = Image(width: 512, height: 512);
   
-  // Fill with purple background (#6366f1)
-  final purple = ColorRgb8(99, 102, 241);
-  fill(image, color: purple);
+  // Fill with green background (#10b981 - emerald green)
+  final green = ColorRgb8(16, 185, 129);
+  fill(image, color: green);
   
-  // Draw brain-like shape (simplified brain icon matching login page design)
+  // Draw typical brain shape
   final white = ColorRgb8(255, 255, 255);
   
-  // Main brain outline - two hemispheres (larger and more prominent)
-  drawCircle(image, x: 180, y: 256, radius: 110, color: white);
-  drawCircle(image, x: 332, y: 256, radius: 110, color: white);
+  // Main brain outline - more realistic brain shape
+  // Left hemisphere
+  _drawBrainHemisphere(image, 180, 256, 120, white, green);
+  // Right hemisphere  
+  _drawBrainHemisphere(image, 332, 256, 120, white, green);
   
-  // Brain stem/connection (more prominent)
-  drawCircle(image, x: 256, y: 256, radius: 70, color: white);
+  // Brain stem at bottom
+  _drawBrainStem(image, 256, 380, white, green);
   
-  // Inner texture circles (brain folds pattern)
-  // Top row
-  drawCircle(image, x: 150, y: 200, radius: 30, color: purple);
-  drawCircle(image, x: 220, y: 190, radius: 35, color: purple);
-  drawCircle(image, x: 292, y: 190, radius: 35, color: purple);
-  drawCircle(image, x: 362, y: 200, radius: 30, color: purple);
-  
-  // Middle row
-  drawCircle(image, x: 160, y: 270, radius: 25, color: purple);
-  drawCircle(image, x: 256, y: 280, radius: 30, color: purple);
-  drawCircle(image, x: 352, y: 270, radius: 25, color: purple);
-  
-  // Bottom row
-  drawCircle(image, x: 180, y: 330, radius: 30, color: purple);
-  drawCircle(image, x: 332, y: 330, radius: 30, color: purple);
-  
-  // Additional detail circles for more brain-like appearance
-  drawCircle(image, x: 130, y: 240, radius: 20, color: purple);
-  drawCircle(image, x: 382, y: 240, radius: 20, color: purple);
+  // Central connection
+  drawCircle(image, x: 256, y: 256, radius: 60, color: white);
   
   // Save as PNG
   final file = File('../assets/launcher_icon.png');
@@ -45,4 +30,46 @@ void main() {
   file.writeAsBytesSync(encodePng(image));
   
   // Icon generated successfully at ${file.path}
+}
+
+void _drawBrainHemisphere(Image image, int centerX, int centerY, int radius, ColorRgb8 mainColor, ColorRgb8 bgColor) {
+  // Main hemisphere shape
+  drawCircle(image, x: centerX, y: centerY, radius: radius, color: mainColor);
+  
+  // Brain folds (gyri) - more realistic pattern
+  // Top folds
+  drawCircle(image, x: centerX - 40, y: centerY - 50, radius: 25, color: bgColor);
+  drawCircle(image, x: centerX + 20, y: centerY - 60, radius: 30, color: bgColor);
+  drawCircle(image, x: centerX + 50, y: centerY - 40, radius: 20, color: bgColor);
+  
+  // Middle folds
+  drawCircle(image, x: centerX - 50, y: centerY, radius: 28, color: bgColor);
+  drawCircle(image, x: centerX + 10, y: centerY + 10, radius: 25, color: bgColor);
+  drawCircle(image, x: centerX + 45, y: centerY - 5, radius: 22, color: bgColor);
+  
+  // Bottom folds
+  drawCircle(image, x: centerX - 35, y: centerY + 45, radius: 24, color: bgColor);
+  drawCircle(image, x: centerX + 15, y: centerY + 55, radius: 28, color: bgColor);
+  drawCircle(image, x: centerX + 50, y: centerY + 35, radius: 20, color: bgColor);
+  
+  // Side folds
+  drawCircle(image, x: centerX - 70, y: centerY - 20, radius: 18, color: bgColor);
+  drawCircle(image, x: centerX - 65, y: centerY + 25, radius: 20, color: bgColor);
+  drawCircle(image, x: centerX + 70, y: centerY - 15, radius: 18, color: bgColor);
+  drawCircle(image, x: centerX + 68, y: centerY + 30, radius: 19, color: bgColor);
+}
+
+void _drawBrainStem(Image image, int centerX, int centerY, ColorRgb8 mainColor, ColorRgb8 bgColor) {
+  // Brain stem - rectangular shape at bottom
+  final stemWidth = 40;
+  final stemHeight = 50;
+  
+  for (int y = centerY; y < centerY + stemHeight; y++) {
+    for (int x = centerX - stemWidth ~/ 2; x < centerX + stemWidth ~/ 2; x++) {
+      image.setPixel(x, y, mainColor);
+    }
+  }
+  
+  // Stem details
+  drawCircle(image, x: centerX, y: centerY + stemHeight - 10, radius: 12, color: bgColor);
 }

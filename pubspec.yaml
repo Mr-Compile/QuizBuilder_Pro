@@ -12,7 +12,6 @@ dependencies:
   flutter:
     sdk: flutter
   sqflite: ^2.3.2
-  sqflite_common_ffi: ^2.3.2
   path: ^1.8.3
   http: ^1.2.0
   shared_preferences: ^2.2.2
@@ -39,5 +38,5 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/launcher_icon.png"
-  adaptive_icon_background: "#6366f1"
+  adaptive_icon_background: "#10b981"
   adaptive_icon_foreground: "assets/launcher_icon.png"

@@ -7,8 +7,8 @@ class AppColors {
   AppColors._();
 
   // Brand
-  static const Color primary = Color(0xFF4F46E5); // Indigo
-  static const Color secondary = Color(0xFF9333EA); // Purple
+  static const Color primary = Color(0xFF10B981); // Emerald Green
+  static const Color secondary = Color(0xFF059669); // Darker Green
   static const Color accent = Color(0xFFF59E0B); // Amber
 
   // Action colors
@@ -18,7 +18,7 @@ class AppColors {
   static const Color cancel = Color(0xFF9CA3AF); // Gray
   static const Color startQuiz = Color(0xFF9333EA); // Purple
   static const Color finishQuiz = Color(0xFFF97316); // Orange
-  static const Color login = Color(0xFF4F46E5); // Indigo
+  static const Color login = Color(0xFF10B981); // Emerald Green
   static const Color logout = Color(0xFFEF4444); // Red
 
   // Background helpers
