@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../core/constants/app_constants.dart';
 import '../models/quiz_answer.dart';
 import '../models/quiz_result.dart';
@@ -26,6 +28,12 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
+    // Ensure FFI factory is initialized for desktop platforms
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+
     final databasesPath = await getDatabasesPath();
     final path = join(databasesPath, _dbName);
 
@@ -155,11 +163,11 @@ class DatabaseHelper {
 
   /// Inserts the default sample data required by the project brief.
   Future<void> _seedDatabase(Database db) async {
-    // Admin
+    // Teacher
     await db.insert('users', {
-      'full_name': 'Administrator',
-      'username': AppConstants.defaultAdminUsername,
-      'password': AppConstants.defaultAdminPassword,
+      'full_name': 'Teacher',
+      'username': AppConstants.defaultTeacherUsername,
+      'password': AppConstants.defaultTeacherPassword,
       'role': AppConstants.roleTeacher,
       'is_active': 1,
     });

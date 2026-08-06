@@ -9,13 +9,16 @@ import 'secure_storage_service.dart';
 class ServiceLocator {
   ServiceLocator._();
 
-  static final DatabaseHelper _db = DatabaseHelper();
+  static DatabaseHelper? _db;
   static SharedPreferences? _prefs;
   static AuthService? _auth;
   static GroqAiService? _groq;
   static SecureStorageService? _secure;
 
-  static DatabaseHelper get db => _db;
+  static DatabaseHelper get db {
+    _db ??= DatabaseHelper();
+    return _db!;
+  }
 
   static Future<SharedPreferences> get prefs async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -24,7 +27,7 @@ class ServiceLocator {
 
   static Future<AuthService> get auth async {
     final p = await prefs;
-    _auth ??= AuthService(_db, p);
+    _auth ??= AuthService(db, p);
     return _auth!;
   }
 
@@ -38,7 +41,7 @@ class ServiceLocator {
 
   static Future<GroqAiService> get groq async {
     final s = await secure;
-    _groq ??= GroqAiService(s, _db);
+    _groq ??= GroqAiService(s, db);
     return _groq!;
   }
 }

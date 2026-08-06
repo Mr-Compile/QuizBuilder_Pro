@@ -26,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isTeacherMode = true;
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
@@ -39,7 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      if (user!.role == AppConstants.roleTeacher) {
+      if (user == null) {
+        throw Exception('Login failed');
+      }
+
+      // Validate role matches selected mode
+      if (_isTeacherMode && user.role != AppConstants.roleTeacher) {
+        throw Exception('This account is not a teacher account');
+      }
+      if (!_isTeacherMode && user.role != AppConstants.roleStudent) {
+        throw Exception('This account is not a student account');
+      }
+
+      if (user.role == AppConstants.roleTeacher) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.teacherDashboard);
       } else {
         Navigator.of(context).pushReplacementNamed(AppRoutes.studentDashboard);
@@ -112,6 +125,56 @@ class _LoginScreenState extends State<LoginScreen> {
                       onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                     ),
                     const SizedBox(height: _mediumSpacing),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _isTeacherMode = true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _isTeacherMode
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(AppTheme.roundedLg),
+                              ),
+                              child: Text(
+                                'Teacher',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _isTeacherMode ? Colors.white : Colors.grey.shade700,
+                                  fontWeight: _isTeacherMode ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: _smallSpacing),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _isTeacherMode = false),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: !_isTeacherMode
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(AppTheme.roundedLg),
+                              ),
+                              child: Text(
+                                'Student',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: !_isTeacherMode ? Colors.white : Colors.grey.shade700,
+                                  fontWeight: !_isTeacherMode ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: _mediumSpacing),
                     TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -150,32 +213,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(AppTheme.roundedLg),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: _mediumSpacing),
-                    Container(
-                      padding: const EdgeInsets.all(_smallSpacing),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(AppTheme.roundedLg),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Default Credentials',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade700,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Admin: admin / admin123',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
