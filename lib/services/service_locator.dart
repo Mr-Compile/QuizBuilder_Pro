@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import 'auth_service.dart';
 import 'groq_ai_service.dart';
+import 'quiz_session_service.dart';
 import 'secure_storage_service.dart';
 
 /// Simple service locator that keeps one instance of each core service.
@@ -14,6 +15,7 @@ class ServiceLocator {
   static AuthService? _auth;
   static GroqAiService? _groq;
   static SecureStorageService? _secure;
+  static QuizSessionService? _quizSession;
 
   static DatabaseHelper get db {
     _db ??= DatabaseHelper();
@@ -43,5 +45,11 @@ class ServiceLocator {
     final s = await secure;
     _groq ??= GroqAiService(s, db);
     return _groq!;
+  }
+
+  static Future<QuizSessionService> get quizSession async {
+    final p = await prefs;
+    _quizSession ??= QuizSessionService(p);
+    return _quizSession!;
   }
 }

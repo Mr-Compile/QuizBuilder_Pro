@@ -8,6 +8,7 @@ import 'features/auth/splash_screen.dart';
 import 'features/question/ai_generate_screen.dart';
 import 'features/teacher/question_form_screen.dart';
 import 'features/teacher/question_management_screen.dart';
+import 'features/teacher/teacher_profile_screen.dart';
 import 'features/quiz/difficulty_selection_screen.dart';
 import 'features/quiz/quiz_result_screen.dart';
 import 'features/quiz/quiz_review_screen.dart';
@@ -116,6 +117,8 @@ class QuizBuilderProAppState extends State<QuizBuilderProApp> {
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case AppRoutes.teacherDashboard:
         return MaterialPageRoute(builder: (_) => const TeacherDashboardScreen());
+      case AppRoutes.teacherProfile:
+        return MaterialPageRoute(builder: (_) => const TeacherProfileScreen());
       case AppRoutes.studentManagement:
         return MaterialPageRoute(builder: (_) => const StudentManagementScreen());
       case AppRoutes.studentForm:

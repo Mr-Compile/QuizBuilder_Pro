@@ -7,6 +7,7 @@ class AppRoutes {
 
   // Teacher
   static const String teacherDashboard = '/teacher/dashboard';
+  static const String teacherProfile = '/teacher/profile';
   static const String studentManagement = '/teacher/students';
   static const String studentForm = '/teacher/students/form';
   static const String studentDetail = '/teacher/students/detail';

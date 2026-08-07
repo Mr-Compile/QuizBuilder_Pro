@@ -185,6 +185,12 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
           route: AppRoutes.teacherDashboard,
           isDashboard: true,
         ),
+        _buildNavItem(
+          context,
+          icon: LucideIcons.user,
+          label: 'Profile',
+          route: AppRoutes.teacherProfile,
+        ),
         Padding(
           padding: const EdgeInsets.all(AppTheme.spacing4),
           child: Text(
@@ -309,33 +315,43 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
   }
 
   Widget _buildCommonSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing4),
-          child: Text(
-            'General',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-          ),
-        ),
-        _buildNavItem(
-          context,
-          icon: LucideIcons.user,
-          label: 'Profile',
-          route: AppRoutes.profile,
-        ),
-        _buildNavItem(
-          context,
-          icon: LucideIcons.info,
-          label: 'About',
-          route: AppRoutes.about,
-        ),
-      ],
+    return FutureBuilder<String?>(
+      future: _getUserRole(),
+      builder: (context, snapshot) {
+        final role = snapshot.data;
+        final profileRoute = role == AppConstants.roleTeacher 
+            ? AppRoutes.teacherProfile 
+            : AppRoutes.profile;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppTheme.spacing4),
+              child: Text(
+                'General',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+              ),
+            ),
+            _buildNavItem(
+              context,
+              icon: LucideIcons.user,
+              label: 'Profile',
+              route: profileRoute,
+            ),
+            _buildNavItem(
+              context,
+              icon: LucideIcons.info,
+              label: 'About',
+              route: AppRoutes.about,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -419,12 +435,57 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
 
   Future<void> _logout() async {
     final auth = await ServiceLocator.auth;
-    await auth.logout();
+    final user = await auth.getCurrentUser();
+    final quizSession = await ServiceLocator.quizSession;
+
+    // Block logout for students during active quiz
+    if (user?.role == AppConstants.roleStudent && quizSession.quizInProgress) {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Cannot Logout'),
+          content: const Text('Finish the quiz before logging out.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Show logout confirmation for non-blocked cases
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.login,
-      (route) => false,
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.delete, foregroundColor: Colors.white),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmed == true) {
+      await auth.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
+    }
   }
 
   Future<String?> _getUserRole() async {

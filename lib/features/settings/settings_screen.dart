@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../app.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/user.dart';
@@ -102,7 +103,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    final auth = await ServiceLocator.auth;
+    final user = await auth.getCurrentUser();
+    final quizSession = await ServiceLocator.quizSession;
+
+    if (!mounted) return;
+
+    // Block logout for students during active quiz
+    if (user?.role == AppConstants.roleStudent && quizSession.quizInProgress) {
+      if (!context.mounted) return;
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Cannot Logout'),
+          content: const Text('Finish the quiz before logging out.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Show logout confirmation for non-blocked cases
+    if (!mounted) return;
+    if (!context.mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -115,7 +144,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final auth = await ServiceLocator.auth;
               await auth.logout();
               if (!mounted) return;
               if (!context.mounted) return;

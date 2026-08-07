@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_utils.dart';
 import '../../models/user.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
@@ -13,11 +14,11 @@ import '../../widgets/role_guard.dart';
 import '../../widgets/enhanced_cards.dart';
 import '../../widgets/navigation_scaffold.dart';
 import '../../widgets/analytics_widgets.dart';
+import '../../widgets/responsive_widgets.dart';
 
 // Spacing constants for better readability
 const double _smallSpacing = AppTheme.spacing2;
 const double _mediumSpacing = AppTheme.spacing4;
-const double _largeSpacing = AppTheme.spacing6;
 
 /// Teacher dashboard with summary cards, charts, and quick actions.
 class TeacherDashboardScreen extends StatefulWidget {
@@ -28,7 +29,6 @@ class TeacherDashboardScreen extends StatefulWidget {
 }
 
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
-  final _db = ServiceLocator.db;
   late Future<DashboardData> _dataFuture;
 
   @override
@@ -56,20 +56,22 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               return const Center(child: Text('Error loading dashboard data'));
             }
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(_mediumSpacing),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  const SizedBox(height: _largeSpacing),
-                  _buildSummaryCards(context, data.summary),
-                  const SizedBox(height: _largeSpacing),
-                  _buildChartsSection(context, data),
-                  const SizedBox(height: _largeSpacing),
-                  _buildRecentActivity(context, data),
-                  const SizedBox(height: _largeSpacing),
-                  _buildQuickActions(context),
-                ],
+              padding: EdgeInsets.all(context.responsiveSpacing),
+              child: ResponsiveContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildSummaryCards(context, data.summary),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildChartsSection(context, data),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildRecentActivity(context, data),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildQuickActions(context),
+                  ],
+                ),
               ),
             );
           },
@@ -109,74 +111,66 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: _mediumSpacing),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final crossAxisCount = constraints.maxWidth < 360 ? 1 : 2;
-            final childAspectRatio = constraints.maxWidth < 360 ? 2.5 : 1.2;
-            return GridView.count(
-              crossAxisCount: crossAxisCount,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: _mediumSpacing,
-              crossAxisSpacing: _mediumSpacing,
-              childAspectRatio: childAspectRatio,
-              children: [
-                EnhancedSummaryCard(
-                  label: 'Total Students',
-                  value: AnalyticsWidgets.formatNumber(data.totalStudents),
-                  icon: LucideIcons.users,
-                  color: AppColors.primary,
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
-                ),
-                EnhancedSummaryCard(
-                  label: 'Active Students',
-                  value: AnalyticsWidgets.formatNumber(data.activeStudents),
-                  icon: LucideIcons.userCheck,
-                  color: AppColors.add,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Total Topics',
-                  value: AnalyticsWidgets.formatNumber(data.topics),
-                  icon: LucideIcons.bookOpen,
-                  color: AppColors.secondary,
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
-                ),
-                EnhancedSummaryCard(
-                  label: 'Total Questions',
-                  value: AnalyticsWidgets.formatNumber(data.questions),
-                  icon: LucideIcons.helpCircle,
-                  color: AppColors.accent,
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
-                ),
-                EnhancedSummaryCard(
-                  label: 'AI Questions',
-                  value: AnalyticsWidgets.formatNumber(data.aiQuestions),
-                  icon: LucideIcons.wand2,
-                  color: AppColors.startQuiz,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Quiz Attempts Today',
-                  value: AnalyticsWidgets.formatNumber(data.attemptsToday),
-                  icon: LucideIcons.clipboardList,
-                  color: AppColors.edit,
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.results),
-                ),
-                EnhancedSummaryCard(
-                  label: 'Total Attempts',
-                  value: AnalyticsWidgets.formatNumber(data.totalAttempts),
-                  icon: LucideIcons.barChart2,
-                  color: AppColors.info,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Avg Student Score',
-                  value: AnalyticsWidgets.formatPercentage(data.averageScore),
-                  icon: LucideIcons.percent,
-                  color: AppColors.success,
-                ),
-              ],
-            );
-          },
+        SizedBox(height: context.responsiveSpacing),
+        ResponsiveGrid(
+          mobileColumns: 1,
+          tabletColumns: 2,
+          desktopColumns: 4,
+          childAspectRatio: context.isMobile ? 2.5 : (context.isTablet ? 1.8 : 1.5),
+          children: [
+            EnhancedSummaryCard(
+              label: 'Total Students',
+              value: AnalyticsWidgets.formatNumber(data.totalStudents),
+              icon: LucideIcons.users,
+              color: AppColors.primary,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
+            ),
+            EnhancedSummaryCard(
+              label: 'Active Students',
+              value: AnalyticsWidgets.formatNumber(data.activeStudents),
+              icon: LucideIcons.userCheck,
+              color: AppColors.add,
+            ),
+            EnhancedSummaryCard(
+              label: 'Total Topics',
+              value: AnalyticsWidgets.formatNumber(data.topics),
+              icon: LucideIcons.bookOpen,
+              color: AppColors.secondary,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
+            ),
+            EnhancedSummaryCard(
+              label: 'Total Questions',
+              value: AnalyticsWidgets.formatNumber(data.questions),
+              icon: LucideIcons.helpCircle,
+              color: AppColors.accent,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
+            ),
+            EnhancedSummaryCard(
+              label: 'AI Questions',
+              value: AnalyticsWidgets.formatNumber(data.aiQuestions),
+              icon: LucideIcons.wand2,
+              color: AppColors.startQuiz,
+            ),
+            EnhancedSummaryCard(
+              label: 'Quiz Attempts Today',
+              value: AnalyticsWidgets.formatNumber(data.attemptsToday),
+              icon: LucideIcons.clipboardList,
+              color: AppColors.edit,
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.results),
+            ),
+            EnhancedSummaryCard(
+              label: 'Total Attempts',
+              value: AnalyticsWidgets.formatNumber(data.totalAttempts),
+              icon: LucideIcons.barChart2,
+              color: AppColors.info,
+            ),
+            EnhancedSummaryCard(
+              label: 'Avg Student Score',
+              value: AnalyticsWidgets.formatPercentage(data.averageScore),
+              icon: LucideIcons.percent,
+              color: AppColors.success,
+            ),
+          ],
         ),
       ],
     );
@@ -192,7 +186,19 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: _mediumSpacing),
+        SizedBox(height: context.responsiveSpacing),
+        ResponsiveBuilder(
+          mobile: _buildMobileQuickActions(context),
+          tablet: _buildTabletQuickActions(context),
+          desktop: _buildDesktopQuickActions(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileQuickActions(BuildContext context) {
+    return Column(
+      children: [
         EnhancedActionCard(
           icon: LucideIcons.users,
           label: 'Manage Students',
@@ -200,7 +206,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           color: AppColors.primary,
           onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.bookOpen,
           label: 'Manage Topics',
@@ -208,7 +214,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           color: AppColors.secondary,
           onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.helpCircle,
           label: 'Manage Questions',
@@ -216,24 +222,59 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           color: AppColors.accent,
           onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.wand2,
-          label: 'Generate AI Questions',
-          subtitle: 'Create questions using AI assistance',
+          label: 'AI Generate Questions',
+          subtitle: 'Use AI to generate quiz questions',
           color: AppColors.startQuiz,
           onTap: () => Navigator.of(context).pushNamed(AppRoutes.aiGenerate),
         ),
-        const SizedBox(height: _smallSpacing),
+      ],
+    );
+  }
+
+  Widget _buildTabletQuickActions(BuildContext context) {
+    return ResponsiveGrid(
+      mobileColumns: 1,
+      tabletColumns: 2,
+      desktopColumns: 4,
+      childAspectRatio: 2.0,
+      children: [
         EnhancedActionCard(
-          icon: LucideIcons.barChart2,
-          label: 'View Statistics',
-          subtitle: 'Analyze performance and trends',
-          color: AppColors.add,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.teacherStatistics),
+          icon: LucideIcons.users,
+          label: 'Manage Students',
+          subtitle: 'Add, edit, or deactivate student accounts',
+          color: AppColors.primary,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.bookOpen,
+          label: 'Manage Topics',
+          subtitle: 'Create and organize quiz topics',
+          color: AppColors.secondary,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.helpCircle,
+          label: 'Manage Questions',
+          subtitle: 'Add, edit, or remove quiz questions',
+          color: AppColors.accent,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.wand2,
+          label: 'AI Generate Questions',
+          subtitle: 'Use AI to generate quiz questions',
+          color: AppColors.startQuiz,
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.aiGenerate),
         ),
       ],
     );
+  }
+
+  Widget _buildDesktopQuickActions(BuildContext context) {
+    return _buildTabletQuickActions(context);
   }
 
   Widget _buildChartsSection(BuildContext context, DashboardData data) {
@@ -456,10 +497,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Future<DashboardData> _loadDashboardData() async {
-    final results = await _db.getAllResults();
-    final questions = await _db.getAllQuestions();
-    final students = await _db.getAllStudents();
-    final topics = await _db.getAllTopics();
+    final db = ServiceLocator.db;
+    final results = await db.getAllResults();
+    final questions = await db.getAllQuestions();
+    final students = await db.getAllStudents();
+    final topics = await db.getAllTopics();
     
     // Calculate summary
     final totalStudents = students.length;
@@ -555,14 +597,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     return DashboardData(
       summary: Summary(
-        totalStudents,
-        activeStudents,
-        totalTopics,
-        totalQuestions,
-        aiQuestions,
-        attemptsToday,
-        totalAttempts,
-        averageScore,
+        totalStudents: totalStudents,
+        activeStudents: activeStudents,
+        topics: totalTopics,
+        questions: totalQuestions,
+        aiQuestions: aiQuestions,
+        attemptsToday: attemptsToday,
+        totalAttempts: totalAttempts,
+        averageScore: averageScore,
       ),
       weeklyAttempts: weeklyAttempts,
       scoresByDifficulty: scoresByDifficulty,
@@ -583,16 +625,16 @@ class Summary {
   final int totalAttempts;
   final double averageScore;
 
-  Summary(
-    this.totalStudents,
-    this.activeStudents,
-    this.topics,
-    this.questions,
-    this.aiQuestions,
-    this.attemptsToday,
-    this.totalAttempts,
-    this.averageScore,
-  );
+  Summary({
+    required this.totalStudents,
+    required this.activeStudents,
+    required this.topics,
+    required this.questions,
+    required this.aiQuestions,
+    required this.attemptsToday,
+    required this.totalAttempts,
+    required this.averageScore,
+  });
 }
 
 class DashboardData {

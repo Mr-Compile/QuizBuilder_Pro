@@ -29,17 +29,18 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
   image: ^4.1.7
 
 flutter:
   uses-material-design: true
   assets:
     - assets/launcher_icon.svg
+    - assets/brain_icon.png
 
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/brain_icon.png"
-  adaptive_icon_background: "#10b981"
-  adaptive_icon_foreground: "assets/brain_icon.png"
+  image_path: assets/launcher_icon.png
+  adaptive_icon_background: '#4F46E5'
+  adaptive_icon_foreground: assets/launcher_icon.png

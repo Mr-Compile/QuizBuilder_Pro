@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_utils.dart';
 import '../../models/user.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
@@ -12,11 +13,11 @@ import '../../widgets/role_guard.dart';
 import '../../widgets/enhanced_cards.dart';
 import '../../widgets/navigation_scaffold.dart';
 import '../../widgets/analytics_widgets.dart';
+import '../../widgets/responsive_widgets.dart';
 
 // Spacing constants for better readability
 const double _smallSpacing = AppTheme.spacing2;
 const double _mediumSpacing = AppTheme.spacing4;
-const double _largeSpacing = AppTheme.spacing6;
 
 /// Student dashboard with personalized analytics, charts, and quick actions.
 class StudentDashboardScreen extends StatefulWidget {
@@ -27,7 +28,6 @@ class StudentDashboardScreen extends StatefulWidget {
 }
 
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
-  final _db = ServiceLocator.db;
   User? _user;
   late Future<StudentDashboardData> _dataFuture;
 
@@ -63,20 +63,22 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               return const Center(child: Text('Error loading dashboard data'));
             }
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(_mediumSpacing),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  const SizedBox(height: _largeSpacing),
-                  _buildSummaryCards(context, data),
-                  const SizedBox(height: _largeSpacing),
-                  _buildChartsSection(context, data),
-                  const SizedBox(height: _largeSpacing),
-                  _buildContinueLearning(context, data),
-                  const SizedBox(height: _largeSpacing),
-                  _buildQuickActions(context),
-                ],
+              padding: EdgeInsets.all(context.responsiveSpacing),
+              child: ResponsiveContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildSummaryCards(context, data),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildChartsSection(context, data),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildContinueLearning(context, data),
+                    SizedBox(height: context.responsiveSpacing * 2),
+                    _buildQuickActions(context),
+                  ],
+                ),
               ),
             );
           },
@@ -116,59 +118,51 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: _mediumSpacing),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final crossAxisCount = constraints.maxWidth < 360 ? 1 : 2;
-            final childAspectRatio = constraints.maxWidth < 360 ? 2.5 : 1.2;
-            return GridView.count(
-              crossAxisCount: crossAxisCount,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: _mediumSpacing,
-              crossAxisSpacing: _mediumSpacing,
-              childAspectRatio: childAspectRatio,
-              children: [
-                EnhancedSummaryCard(
-                  label: 'Quizzes Taken',
-                  value: AnalyticsWidgets.formatNumber(data.quizzesTaken),
-                  icon: LucideIcons.clipboardList,
-                  color: AppColors.primary,
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.history),
-                ),
-                EnhancedSummaryCard(
-                  label: 'Average Score',
-                  value: AnalyticsWidgets.formatPercentage(data.averageScore),
-                  icon: LucideIcons.percent,
-                  color: AppColors.accent,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Highest Score',
-                  value: AnalyticsWidgets.formatPercentage(data.highestScore),
-                  icon: LucideIcons.trophy,
-                  color: AppColors.add,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Favorite Topic',
-                  value: data.favoriteTopic,
-                  icon: LucideIcons.star,
-                  color: AppColors.secondary,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Best Difficulty',
-                  value: data.bestDifficulty,
-                  icon: LucideIcons.layers,
-                  color: AppColors.edit,
-                ),
-                EnhancedSummaryCard(
-                  label: 'Current Streak',
-                  value: '${data.currentStreak}',
-                  icon: LucideIcons.zap,
-                  color: AppColors.startQuiz,
-                ),
-              ],
-            );
-          },
+        SizedBox(height: context.responsiveSpacing),
+        ResponsiveGrid(
+          mobileColumns: 1,
+          tabletColumns: 2,
+          desktopColumns: 3,
+          childAspectRatio: context.isMobile ? 2.5 : (context.isTablet ? 1.8 : 1.5),
+          children: [
+            EnhancedSummaryCard(
+              label: 'Quizzes Taken',
+              value: AnalyticsWidgets.formatNumber(data.quizzesTaken),
+              icon: LucideIcons.clipboardList,
+              color: AppColors.primary,
+              onTap: () => Navigator.pushNamed(context, AppRoutes.history),
+            ),
+            EnhancedSummaryCard(
+              label: 'Average Score',
+              value: AnalyticsWidgets.formatPercentage(data.averageScore),
+              icon: LucideIcons.percent,
+              color: AppColors.accent,
+            ),
+            EnhancedSummaryCard(
+              label: 'Highest Score',
+              value: AnalyticsWidgets.formatPercentage(data.highestScore),
+              icon: LucideIcons.trophy,
+              color: AppColors.add,
+            ),
+            EnhancedSummaryCard(
+              label: 'Favorite Topic',
+              value: data.favoriteTopic,
+              icon: LucideIcons.star,
+              color: AppColors.secondary,
+            ),
+            EnhancedSummaryCard(
+              label: 'Best Difficulty',
+              value: data.bestDifficulty,
+              icon: LucideIcons.layers,
+              color: AppColors.edit,
+            ),
+            EnhancedSummaryCard(
+              label: 'Current Streak',
+              value: '${data.currentStreak}',
+              icon: LucideIcons.zap,
+              color: AppColors.startQuiz,
+            ),
+          ],
         ),
       ],
     );
@@ -184,7 +178,19 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: _mediumSpacing),
+        SizedBox(height: context.responsiveSpacing),
+        ResponsiveBuilder(
+          mobile: _buildMobileQuickActions(context),
+          tablet: _buildTabletQuickActions(context),
+          desktop: _buildDesktopQuickActions(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileQuickActions(BuildContext context) {
+    return Column(
+      children: [
         EnhancedActionCard(
           icon: LucideIcons.bookOpen,
           label: 'Browse Topics',
@@ -192,7 +198,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           color: AppColors.secondary,
           onTap: () => Navigator.pushNamed(context, AppRoutes.topicSelect),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.history,
           label: 'My History',
@@ -200,7 +206,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           color: AppColors.edit,
           onTap: () => Navigator.pushNamed(context, AppRoutes.history),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.barChart2,
           label: 'My Statistics',
@@ -208,7 +214,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           color: AppColors.add,
           onTap: () => Navigator.pushNamed(context, AppRoutes.studentStatistics),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.bookX,
           label: 'Review Mistakes',
@@ -216,7 +222,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           color: AppColors.delete,
           onTap: () => Navigator.pushNamed(context, AppRoutes.reviewWrongAnswers),
         ),
-        const SizedBox(height: _smallSpacing),
+        SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
           icon: LucideIcons.user,
           label: 'My Profile',
@@ -224,16 +230,58 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           color: AppColors.accent,
           onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
         ),
-        const SizedBox(height: _smallSpacing),
+      ],
+    );
+  }
+
+  Widget _buildTabletQuickActions(BuildContext context) {
+    return ResponsiveGrid(
+      mobileColumns: 1,
+      tabletColumns: 2,
+      desktopColumns: 3,
+      childAspectRatio: 2.0,
+      children: [
         EnhancedActionCard(
-          icon: LucideIcons.settings,
-          label: 'Settings',
-          subtitle: 'Customize your experience',
-          color: AppColors.cancel,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
+          icon: LucideIcons.bookOpen,
+          label: 'Browse Topics',
+          subtitle: 'Explore available quiz topics',
+          color: AppColors.secondary,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.topicSelect),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.history,
+          label: 'My History',
+          subtitle: 'View past quiz results',
+          color: AppColors.edit,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.history),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.barChart2,
+          label: 'My Statistics',
+          subtitle: 'Track your learning progress',
+          color: AppColors.add,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.studentStatistics),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.bookX,
+          label: 'Review Mistakes',
+          subtitle: 'Practice questions you got wrong',
+          color: AppColors.delete,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.reviewWrongAnswers),
+        ),
+        EnhancedActionCard(
+          icon: LucideIcons.user,
+          label: 'My Profile',
+          subtitle: 'Update your name or password',
+          color: AppColors.accent,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
         ),
       ],
     );
+  }
+
+  Widget _buildDesktopQuickActions(BuildContext context) {
+    return _buildTabletQuickActions(context);
   }
 
   Widget _buildChartsSection(BuildContext context, StudentDashboardData data) {
@@ -420,8 +468,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       throw Exception('User not found');
     }
 
-    final results = await _db.getResultsForUser(user.id!);
-    final topics = await _db.getAllTopics();
+    final db = ServiceLocator.db;
+    final results = await db.getResultsForUser(user.id!);
+    final topics = await db.getAllTopics();
 
     // Calculate basic stats
     final quizzesTaken = results.length;
@@ -498,7 +547,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     int correctAnswers = 0;
     for (final result in results) {
       if (result.id != null) {
-        final answers = await _db.getAnswersForResult(result.id!);
+        final answers = await db.getAnswersForResult(result.id!);
         totalAnswers += answers.length;
         correctAnswers += answers.where((a) => a.isCorrect).length;
       }
@@ -509,7 +558,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     String? recommendedTopic;
     if (topicPerformance.isNotEmpty) {
       final weakest = topicPerformance.entries.reduce((a, b) => a.value < b.value ? a : b);
-      if (weakest.value < 70) {
+      if (weakest.value < 70.0) {
         recommendedTopic = weakest.key;
       }
     }
