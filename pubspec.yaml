@@ -26,7 +26,7 @@ dependencies:
   flutter_slidable: ^3.0.1
   flutter_svg: ^2.0.9
   pdf: ^3.10.7
-  printing: ^5.11.1
+  printing: ^5.13.1
   excel: ^4.0.3
 
 dev_dependencies:
