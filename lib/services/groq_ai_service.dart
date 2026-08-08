@@ -5,14 +5,18 @@ import 'package:http/http.dart' as http;
 import '../core/constants/app_constants.dart';
 import '../database/database_helper.dart';
 import '../models/question.dart';
+import '../models/user.dart';
+import 'quota_service.dart';
 import 'secure_storage_service.dart';
 
 /// Service that calls the Groq API to generate quiz questions.
+/// Enforces daily quota limits before allowing any generation.
 class GroqAiService {
   final SecureStorageService _secure;
   final DatabaseHelper _db;
+  final QuotaService _quota;
 
-  GroqAiService(this._secure, this._db);
+  GroqAiService(this._secure, this._db, this._quota);
 
   /// Stores the Groq API key securely.
   Future<void> saveApiKey(String key) async {
@@ -43,13 +47,18 @@ class GroqAiService {
   /// Sends the prompt to Groq and returns a list of parsed [Question] objects.
   /// [topicId] is the selected topic, [difficulty] is Easy/Medium/Hard and
   /// [quantity] is the number of questions to generate.
+  /// [user] is the user requesting the generation (required for quota enforcement).
   Future<List<Question>> generateQuestions({
     required int topicId,
     required String difficulty,
     required int quantity,
     String category = 'General',
     int maxRetries = 2,
+    required User user,
   }) async {
+    // SECURITY: Enforce quota check before any API calls
+    await _quota.checkQuotaAndThrowIfExceeded(user);
+
     final apiKey = await getApiKey();
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception('Groq API key is not configured. Go to Settings to add your key.');
@@ -75,6 +84,14 @@ class GroqAiService {
 
     final questions = _parseGeneratedJson(responseContent, topicId, difficulty);
     final validated = _validateQuestions(questions, expectedCount: quantity);
+
+    // Record the successful generation for quota tracking
+    await _quota.recordGeneration(
+      userId: user.id!,
+      topicId: topicId,
+      difficulty: difficulty,
+      count: validated.length,
+    );
 
     return validated;
   }
@@ -347,5 +364,334 @@ class GroqAiService {
     );
 
     return ids;
+  }
+
+  /// Regenerate a single question with a different version.
+  Future<Question> regenerateSingleQuestion({
+    required Question originalQuestion,
+    required String topicName,
+    int maxRetries = 2,
+  }) async {
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('Groq API key is not configured. Go to Settings to add your key.');
+    }
+
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      throw Exception('No internet connection. Please check your network and try again.');
+    }
+
+    final prompt = _buildRegeneratePrompt(
+      originalQuestion: originalQuestion,
+      topicName: topicName,
+    );
+
+    final responseContent = await _callGroqWithRetry(
+      apiKey: apiKey,
+      prompt: prompt,
+      maxRetries: maxRetries,
+    );
+
+    return _parseSingleQuestionJson(responseContent, originalQuestion.topicId, originalQuestion.difficulty);
+  }
+
+  /// Regenerate multiple selected questions.
+  Future<List<Question>> regenerateSelectedQuestions({
+    required List<Question> questions,
+    required String topicName,
+    int maxRetries = 2,
+  }) async {
+    final regenerated = <Question>[];
+    for (final question in questions) {
+      try {
+        final newQuestion = await regenerateSingleQuestion(
+          originalQuestion: question,
+          topicName: topicName,
+          maxRetries: maxRetries,
+        );
+        regenerated.add(newQuestion);
+      } catch (e) {
+        // If regeneration fails, keep the original
+        regenerated.add(question);
+      }
+    }
+    return regenerated;
+  }
+
+  /// Generate questions from custom topic text.
+  Future<List<Question>> generateFromCustomTopic({
+    required String customTopic,
+    required int topicId,
+    required String difficulty,
+    required int quantity,
+    String category = 'General',
+    int maxRetries = 2,
+    required User user,
+  }) async {
+    // SECURITY: Enforce quota check before any API calls
+    await _quota.checkQuotaAndThrowIfExceeded(user);
+
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('Groq API key is not configured. Go to Settings to add your key.');
+    }
+
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      throw Exception('No internet connection. Please check your network and try again.');
+    }
+
+    final prompt = _buildCustomTopicPrompt(
+      customTopic: customTopic,
+      difficulty: difficulty,
+      quantity: quantity,
+      category: category,
+    );
+
+    final responseContent = await _callGroqWithRetry(
+      apiKey: apiKey,
+      prompt: prompt,
+      maxRetries: maxRetries,
+    );
+
+    final questions = _parseGeneratedJson(responseContent, topicId, difficulty);
+    final validated = _validateQuestions(questions, expectedCount: quantity);
+
+    // Record the successful generation for quota tracking
+    await _quota.recordGeneration(
+      userId: user.id!,
+      topicId: topicId,
+      difficulty: difficulty,
+      count: validated.length,
+    );
+
+    return validated;
+  }
+
+  /// Generate questions from file content.
+  Future<List<Question>> generateFromFileContent({
+    required String fileContent,
+    required int topicId,
+    required String difficulty,
+    required int quantity,
+    String category = 'General',
+    int maxRetries = 2,
+    required User user,
+  }) async {
+    // SECURITY: Enforce quota check before any API calls
+    await _quota.checkQuotaAndThrowIfExceeded(user);
+
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('Groq API key is not configured. Go to Settings to add your key.');
+    }
+
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      throw Exception('No internet connection. Please check your network and try again.');
+    }
+
+    final prompt = _buildFileContentPrompt(
+      fileContent: fileContent,
+      difficulty: difficulty,
+      quantity: quantity,
+      category: category,
+    );
+
+    final responseContent = await _callGroqWithRetry(
+      apiKey: apiKey,
+      prompt: prompt,
+      maxRetries: maxRetries,
+    );
+
+    final questions = _parseGeneratedJson(responseContent, topicId, difficulty);
+    final validated = _validateQuestions(questions, expectedCount: quantity);
+
+    // Record the successful generation for quota tracking
+    await _quota.recordGeneration(
+      userId: user.id!,
+      topicId: topicId,
+      difficulty: difficulty,
+      count: validated.length,
+    );
+
+    return validated;
+  }
+
+  /// Identify the topic from given text using AI.
+  Future<String> identifyTopic(String text) async {
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('Groq API key is not configured. Go to Settings to add your key.');
+    }
+
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      throw Exception('No internet connection. Please check your network and try again.');
+    }
+
+    final prompt = _buildTopicIdentificationPrompt(text);
+
+    final responseContent = await _callGroqWithRetry(
+      apiKey: apiKey,
+      prompt: prompt,
+      maxRetries: 1,
+    );
+
+    return _parseTopicIdentification(responseContent);
+  }
+
+  /// Search the internet for topic information (simulated via AI knowledge).
+  Future<String> searchTopicInfo(String topic) async {
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('Groq API key is not configured. Go to Settings to add your key.');
+    }
+
+    final hasInternet = await _hasInternet();
+    if (!hasInternet) {
+      throw Exception('No internet connection. Please check your network and try again.');
+    }
+
+    final prompt = _buildTopicSearchPrompt(topic);
+
+    final responseContent = await _callGroqWithRetry(
+      apiKey: apiKey,
+      prompt: prompt,
+      maxRetries: 1,
+    );
+
+    return responseContent.trim();
+  }
+
+  /// Build prompt for regenerating a single question.
+  String _buildRegeneratePrompt({
+    required Question originalQuestion,
+    required String topicName,
+  }) {
+    return 'Generate a different multiple choice question for the topic "$topicName" at ${originalQuestion.difficulty} difficulty. '
+        'The original question was: "${originalQuestion.question}" '
+        'Create a new question that tests the same concept but is different in wording and options. '
+        'Return only a valid JSON object with fields: question, option_a, option_b, option_c, option_d, correct_answer (A/B/C/D), category. '
+        'Category should be "${originalQuestion.category}". Make sure options are plausible and one is clearly correct.';
+  }
+
+  /// Build prompt for custom topic generation.
+  String _buildCustomTopicPrompt({
+    required String customTopic,
+    required String difficulty,
+    required int quantity,
+    required String category,
+  }) {
+    return 'Generate $quantity multiple choice questions for the topic: "$customTopic" at $difficulty difficulty. '
+        'Return only a valid JSON array. Each object must contain: '
+        'question, option_a, option_b, option_c, option_d, correct_answer (A/B/C/D), category. '
+        'Category should be "$category". Make sure options are plausible and one is clearly correct. '
+        'Vary the questions so they are not repetitive.';
+  }
+
+  /// Build prompt for file content generation.
+  String _buildFileContentPrompt({
+    required String fileContent,
+    required String difficulty,
+    required int quantity,
+    required String category,
+  }) {
+    final truncatedContent = fileContent.length > 2000 
+        ? '${fileContent.substring(0, 2000)}...' 
+        : fileContent;
+    
+    return 'Generate $quantity multiple choice questions based on the following content at $difficulty difficulty. '
+        'Content: "$truncatedContent" '
+        'Return only a valid JSON array. Each object must contain: '
+        'question, option_a, option_b, option_c, option_d, correct_answer (A/B/C/D), category. '
+        'Category should be "$category". Make sure options are plausible and one is clearly correct. '
+        'Vary the questions so they are not repetitive.';
+  }
+
+  /// Build prompt for topic identification.
+  String _buildTopicIdentificationPrompt(String text) {
+    final truncatedText = text.length > 500 ? '${text.substring(0, 500)}...' : text;
+    return 'Identify the main educational topic or subject from the following text. '
+        'Text: "$truncatedText" '
+        'Return only the topic name (e.g., "Mathematics", "Science", "History", etc.). '
+        'Do not include explanations or additional text.';
+  }
+
+  /// Build prompt for topic search.
+  String _buildTopicSearchPrompt(String topic) {
+    return 'Provide a brief overview and key concepts for the topic: "$topic". '
+        'Include the main subtopics and important areas that should be covered in a quiz. '
+        'Keep it concise and educational.';
+  }
+
+  /// Parse a single question JSON response.
+  Question _parseSingleQuestionJson(String content, int topicId, String difficulty) {
+    String cleaned = content.trim();
+
+    if (cleaned.startsWith('```json')) {
+      cleaned = cleaned.substring(7);
+      if (cleaned.contains('```')) {
+        cleaned = cleaned.substring(0, cleaned.lastIndexOf('```'));
+      }
+      cleaned = cleaned.trim();
+    } else if (cleaned.startsWith('```')) {
+      cleaned = cleaned.substring(3);
+      if (cleaned.contains('```')) {
+        cleaned = cleaned.substring(0, cleaned.lastIndexOf('```'));
+      }
+      cleaned = cleaned.trim();
+    }
+
+    final parsed = jsonDecode(cleaned);
+    if (parsed is! Map<String, dynamic>) {
+      throw Exception('Expected a JSON object for a single question.');
+    }
+
+    final now = DateTime.now().toIso8601String();
+    final questionText = parsed['question']?.toString().trim() ?? '';
+    final optionA = parsed['option_a']?.toString().trim() ?? '';
+    final optionB = parsed['option_b']?.toString().trim() ?? '';
+    final optionC = parsed['option_c']?.toString().trim() ?? '';
+    final optionD = parsed['option_d']?.toString().trim() ?? '';
+    var correct = parsed['correct_answer']?.toString().trim().toUpperCase() ?? '';
+
+    if (!['A', 'B', 'C', 'D'].contains(correct)) {
+      throw Exception('Invalid correct_answer: $correct');
+    }
+    if (questionText.isEmpty || optionA.isEmpty || optionB.isEmpty) {
+      throw Exception('Question is missing required fields.');
+    }
+
+    return Question(
+      topicId: topicId,
+      question: questionText,
+      optionA: optionA,
+      optionB: optionB,
+      optionC: optionC,
+      optionD: optionD,
+      correctAnswer: correct,
+      difficulty: difficulty,
+      category: parsed['category']?.toString().trim() ?? 'General',
+      source: AppConstants.sourceAi,
+      createdBy: null,
+      createdAt: now,
+    );
+  }
+
+  /// Parse topic identification response.
+  String _parseTopicIdentification(String content) {
+    String cleaned = content.trim();
+    
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replaceAll('```', '').trim();
+    }
+    
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+      cleaned = cleaned.substring(1, cleaned.length - 1);
+    }
+    
+    return cleaned;
   }
 }

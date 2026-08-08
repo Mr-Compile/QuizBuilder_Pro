@@ -9,6 +9,7 @@ import '../../core/validation/validators.dart';
 import '../../models/user.dart';
 import '../../services/groq_ai_service.dart';
 import '../../services/service_locator.dart';
+import '../../widgets/quota_indicator.dart';
 import '../../widgets/navigation_scaffold.dart';
 import '../../widgets/modal_bottom_sheet.dart';
 
@@ -366,6 +367,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Card(
             child: Column(
               children: [
+                if (_user != null)
+                  Padding(
+                    padding: const EdgeInsets.all(_mediumSpacing),
+                    child: QuotaIndicator(user: _user!),
+                  ),
+                if (_user != null)
+                  const Divider(height: 1),
                 ListTile(
                   leading: const Icon(LucideIcons.key),
                   title: const Text('Groq API Key'),

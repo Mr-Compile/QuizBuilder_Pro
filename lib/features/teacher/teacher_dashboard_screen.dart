@@ -10,6 +10,7 @@ import '../../core/utils/responsive_utils.dart';
 import '../../models/user.dart';
 import '../../models/topic.dart';
 import '../../services/service_locator.dart';
+import '../../widgets/quota_indicator.dart';
 import '../../widgets/role_guard.dart';
 import '../../widgets/enhanced_cards.dart';
 import '../../widgets/navigation_scaffold.dart';
@@ -30,11 +31,21 @@ class TeacherDashboardScreen extends StatefulWidget {
 
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   late Future<DashboardData> _dataFuture;
+  User? _currentUser;
 
   @override
   void initState() {
     super.initState();
     _dataFuture = _loadDashboardData();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final auth = await ServiceLocator.auth;
+    final user = await auth.getCurrentUser();
+    if (user != null && mounted) {
+      setState(() => _currentUser = user);
+    }
   }
 
   @override
@@ -63,7 +74,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildHeader(context),
-                      SizedBox(height: context.responsiveSpacing * 2),
+                      SizedBox(height: context.responsiveSpacing),
+                      if (_currentUser != null)
+                        QuotaIndicator(user: _currentUser!),
+                      if (_currentUser != null)
+                        SizedBox(height: context.responsiveSpacing * 2),
                       _buildSummaryCards(context, data.summary),
                       SizedBox(height: context.responsiveSpacing * 2),
                       _buildChartsSection(context, data),

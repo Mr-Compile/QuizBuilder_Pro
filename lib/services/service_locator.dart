@@ -2,8 +2,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import 'auth_service.dart';
+import 'backup_service.dart';
 import 'export_service.dart';
+import 'file_processing_service.dart';
 import 'groq_ai_service.dart';
+import 'quota_service.dart';
 import 'quiz_session_service.dart';
 import 'secure_storage_service.dart';
 
@@ -18,6 +21,9 @@ class ServiceLocator {
   static SecureStorageService? _secure;
   static QuizSessionService? _quizSession;
   static ExportService? _export;
+  static FileProcessingService? _fileProcessing;
+  static BackupService? _backup;
+  static QuotaService? _quota;
 
   static DatabaseHelper get db {
     _db ??= DatabaseHelper();
@@ -45,7 +51,8 @@ class ServiceLocator {
 
   static Future<GroqAiService> get groq async {
     final s = await secure;
-    _groq ??= GroqAiService(s, db);
+    final q = await quota;
+    _groq ??= GroqAiService(s, db, q);
     return _groq!;
   }
 
@@ -58,5 +65,21 @@ class ServiceLocator {
   static ExportService get export {
     _export ??= ExportService(db);
     return _export!;
+  }
+
+  static FileProcessingService get fileProcessing {
+    _fileProcessing ??= FileProcessingService();
+    return _fileProcessing!;
+  }
+
+  static BackupService get backup {
+    _backup ??= BackupService(db);
+    return _backup!;
+  }
+
+  static Future<QuotaService> get quota async {
+    final p = await prefs;
+    _quota ??= QuotaService(db, p);
+    return _quota!;
   }
 }

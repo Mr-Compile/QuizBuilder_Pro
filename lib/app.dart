@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/question/ai_generate_screen.dart';
+import 'features/teacher/backup_restore_screen.dart';
 import 'features/teacher/question_form_screen.dart';
 import 'features/teacher/question_management_screen.dart';
 import 'features/teacher/teacher_profile_screen.dart';
@@ -139,6 +140,8 @@ class QuizBuilderProAppState extends State<QuizBuilderProApp> {
         return MaterialPageRoute(builder: (_) => const ResultsScreen());
       case AppRoutes.teacherStatistics:
         return MaterialPageRoute(builder: (_) => const TeacherStatisticsScreen());
+      case AppRoutes.backupRestore:
+        return MaterialPageRoute(builder: (_) => const BackupRestoreScreen());
       case AppRoutes.studentDashboard:
         return MaterialPageRoute(builder: (_) => const StudentDashboardScreen());
       case AppRoutes.topicSelect:

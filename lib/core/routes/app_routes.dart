@@ -18,6 +18,7 @@ class AppRoutes {
   static const String aiGenerate = '/teacher/questions/ai-generate';
   static const String results = '/teacher/results';
   static const String teacherStatistics = '/teacher/statistics';
+  static const String backupRestore = '/teacher/backup-restore';
 
   // Student
   static const String studentDashboard = '/student/dashboard';

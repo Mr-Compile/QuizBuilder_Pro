@@ -25,4 +25,9 @@ class AppConstants {
   static const String prefsSessionRole = 'sessionRole';
   static const String prefsApiKey = 'groqApiKey';
   static const String prefsTheme = 'appTheme';
+
+  // AI Generation Quota Constants
+  static const int teacherDailyQuota = 10;
+  static const int studentDailyQuota = 0;
+  static const String prefsLastQuotaResetDate = 'lastQuotaResetDate';
 }

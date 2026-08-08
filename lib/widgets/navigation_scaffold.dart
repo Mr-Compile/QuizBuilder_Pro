@@ -255,6 +255,23 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
           label: 'AI Generate',
           route: AppRoutes.aiGenerate,
         ),
+        Padding(
+          padding: const EdgeInsets.all(AppTheme.spacing4),
+          child: Text(
+            'Data',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+          ),
+        ),
+        _buildNavItem(
+          context,
+          icon: LucideIcons.databaseBackup,
+          label: 'Backup & Restore',
+          route: AppRoutes.backupRestore,
+        ),
       ],
     );
   }

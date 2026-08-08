@@ -24,6 +24,7 @@ class AppColors {
   // Status colors
   static const Color info = Color(0xFF3B82F6); // Blue
   static const Color success = Color(0xFF22C55E); // Green
+  static const Color warning = Color(0xFFF59E0B); // Amber
 
   // Background helpers
   static const Color correct = Color(0xFF86EFAC);

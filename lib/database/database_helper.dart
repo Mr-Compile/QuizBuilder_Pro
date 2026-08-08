@@ -304,6 +304,12 @@ class DatabaseHelper {
     return maps.map(User.fromMap).toList();
   }
 
+  Future<List<User>> getAllUsers() async {
+    final db = await database;
+    final maps = await db.query('users', orderBy: 'full_name ASC');
+    return maps.map(User.fromMap).toList();
+  }
+
   Future<int> countStudents({bool activeOnly = false}) async {
     final db = await database;
     final condition = activeOnly ? 'role = ? AND is_active = 1' : 'role = ?';
@@ -446,6 +452,10 @@ class DatabaseHelper {
     return maps.map(QuizResult.fromMap).toList();
   }
 
+  Future<List<QuizResult>> getAllQuizResults() async {
+    return getAllResults();
+  }
+
   Future<QuizResult?> getResultById(int id) async {
     final db = await database;
     final maps = await db.query(
@@ -546,6 +556,12 @@ class DatabaseHelper {
     return maps.map(QuizAnswer.fromMap).toList();
   }
 
+  Future<List<QuizAnswer>> getAllQuizAnswers() async {
+    final db = await database;
+    final maps = await db.query('quiz_answers', orderBy: 'id ASC');
+    return maps.map(QuizAnswer.fromMap).toList();
+  }
+
   // ---------------- AI Generation History ----------------
 
   Future<int> recordAiGeneration({
@@ -597,5 +613,11 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM ai_generations');
     return (result.first['count'] as int?) ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllAiGenerations() async {
+    final db = await database;
+    final maps = await db.query('ai_generations', orderBy: 'generated_at DESC');
+    return maps;
   }
 }
