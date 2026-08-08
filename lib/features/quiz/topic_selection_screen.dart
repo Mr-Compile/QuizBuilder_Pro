@@ -48,7 +48,7 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                 contentPadding: EdgeInsets.all(context.responsiveCardPadding),
                 leading: CircleAvatar(
                   backgroundColor: AppColors.secondary.withValues(alpha: 0.15),
-                  child: const Icon(LucideIcons.bookOpen, color: AppColors.secondary),
+                  child: Icon(t.icon ?? LucideIcons.bookOpen, color: AppColors.secondary),
                 ),
                 title: Text(t.name, style: Theme.of(context).textTheme.titleMedium),
                 subtitle: Text('${t.description}\n$count question${count == 1 ? '' : 's'} available'),
@@ -97,7 +97,7 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                     children: [
                       CircleAvatar(
                         backgroundColor: AppColors.secondary.withValues(alpha: 0.15),
-                        child: const Icon(LucideIcons.bookOpen, color: AppColors.secondary),
+                        child: Icon(t.icon ?? LucideIcons.bookOpen, color: AppColors.secondary),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

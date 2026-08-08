@@ -254,7 +254,7 @@ class _TopicManagementScreenState extends State<TopicManagementScreen> {
                               subtitle: '${t.description}\n$count question${count == 1 ? '' : 's'}',
                               leading: CircleAvatar(
                                 backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                                child: Icon(LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary),
+                                child: Icon(t.icon ?? LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary),
                               ),
                               trailing: [
                                 PermissionGuard(

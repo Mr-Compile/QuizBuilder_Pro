@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../models/question.dart';
@@ -56,13 +57,63 @@ class _QuizReviewScreenState extends State<QuizReviewScreen> {
               return const Center(child: Text('No answers to review.'));
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(AppTheme.mediumSpacing),
-              itemCount: answers.length,
-              itemBuilder: (context, index) {
-                final a = answers[index];
-                return _ReviewCard(answer: a, db: _db);
-              },
+            return Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(AppTheme.mediumSpacing),
+                    itemCount: answers.length,
+                    itemBuilder: (context, index) {
+                      final a = answers[index];
+                      return _ReviewCard(answer: a, db: _db);
+                    },
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.mediumSpacing),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            AppRoutes.studentDashboard,
+                            (route) => false,
+                          ),
+                          icon: const Icon(LucideIcons.home, size: 16),
+                          label: const Text('Dashboard'),
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.smallSpacing),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            AppRoutes.topicSelect,
+                            (route) => false,
+                          ),
+                          icon: const Icon(LucideIcons.refreshCcw, size: 16),
+                          label: const Text('New Quiz'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.startQuiz,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             );
           },
         ),

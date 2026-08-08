@@ -232,12 +232,45 @@ class _ResultView extends StatelessWidget {
                     (route) => false,
                   ),
                   icon: const Icon(LucideIcons.refreshCcw, size: 16),
-                  label: const Text('Retry'),
+                  label: const Text('Try Another Quiz'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.startQuiz,
                     foregroundColor: Colors.white,
                   ),
                 ),
+              ),
+              const SizedBox(height: AppTheme.smallSpacing),
+              TextButton.icon(
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.studentDashboard,
+                  (route) => false,
+                ),
+                icon: const Icon(LucideIcons.skipForward, size: 16),
+                label: const Text('Skip Review & Go to Dashboard'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: AppTheme.smallSpacing),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => ServiceLocator.export.exportToPdf(result.id!),
+                      icon: const Icon(LucideIcons.fileText, size: 16),
+                      label: const Text('Export PDF'),
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.smallSpacing),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => ServiceLocator.export.exportToExcel(result.id!),
+                      icon: const Icon(LucideIcons.table, size: 16),
+                      label: const Text('Export Excel'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

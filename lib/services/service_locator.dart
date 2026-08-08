@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import 'auth_service.dart';
+import 'export_service.dart';
 import 'groq_ai_service.dart';
 import 'quiz_session_service.dart';
 import 'secure_storage_service.dart';
@@ -16,6 +17,7 @@ class ServiceLocator {
   static GroqAiService? _groq;
   static SecureStorageService? _secure;
   static QuizSessionService? _quizSession;
+  static ExportService? _export;
 
   static DatabaseHelper get db {
     _db ??= DatabaseHelper();
@@ -51,5 +53,10 @@ class ServiceLocator {
     final p = await prefs;
     _quizSession ??= QuizSessionService(p);
     return _quizSession!;
+  }
+
+  static ExportService get export {
+    _export ??= ExportService(db);
+    return _export!;
   }
 }

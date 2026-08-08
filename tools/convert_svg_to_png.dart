@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:image/image.dart' as img;
 
-void main() {
+void main() async {
   // Create a 512x512 image
   final image = img.Image(width: 512, height: 512);
   
@@ -9,10 +9,9 @@ void main() {
   final green = img.ColorRgb8(16, 185, 129);
   img.fill(image, color: green);
   
-  // Draw typical brain shape
+  // Draw a simple brain shape as fallback
   final white = img.ColorRgb8(255, 255, 255);
   
-  // Main brain outline - more realistic brain shape
   // Left hemisphere
   _drawBrainHemisphere(image, 180, 256, 120, white, green);
   // Right hemisphere  

@@ -100,7 +100,7 @@ class _QuizScreenState extends State<QuizScreen> {
   void _selectAnswer(int? questionId, String answer) {
     if (questionId != null) {
       setState(() {
-        _answers[questionId] = answer;
+        _answers[questionId] = answer.trim().toUpperCase();
       });
     }
   }
@@ -155,7 +155,11 @@ class _QuizScreenState extends State<QuizScreen> {
     _timer?.cancel();
     await _endQuizSession();
 
-    final correctCount = _questions.where((q) => _answers[q.id] == q.correctAnswer).length;
+    final correctCount = _questions.where((q) {
+      final userAnswer = _answers[q.id]?.trim().toUpperCase() ?? '';
+      final correctAnswer = q.correctAnswer.trim().toUpperCase();
+      return userAnswer == correctAnswer;
+    }).length;
     final total = _questions.length;
     final percentage = total == 0 ? 0.0 : (correctCount / total) * 100;
 
@@ -176,13 +180,14 @@ class _QuizScreenState extends State<QuizScreen> {
     final resultId = await _db.insertQuizResult(result);
 
     final quizAnswers = _questions.map((q) {
-      final userAnswer = _answers[q.id] ?? '';
-      final isCorrect = userAnswer == q.correctAnswer;
+      final userAnswer = _answers[q.id]?.trim().toUpperCase() ?? '';
+      final correctAnswer = q.correctAnswer.trim().toUpperCase();
+      final isCorrect = userAnswer == correctAnswer;
       return QuizAnswer(
         resultId: resultId,
         questionId: q.id!,
         userAnswer: userAnswer,
-        correctAnswer: q.correctAnswer,
+        correctAnswer: correctAnswer,
         isCorrect: isCorrect,
       );
     }).toList();

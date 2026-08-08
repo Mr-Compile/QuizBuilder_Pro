@@ -6,7 +6,7 @@ class AppConstants {
   static const String appTagline = 'Create, learn, and practice quizzes online or offline.';
 
   static const String defaultTeacherUsername = 'teacher';
-  static const String defaultTeacherPassword = 'teacher123';
+  static const String defaultTeacherPassword = 'Teacher123!';
 
   static const String roleTeacher = 'teacher';
   static const String roleStudent = 'student';

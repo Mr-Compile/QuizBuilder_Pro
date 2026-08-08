@@ -53,9 +53,9 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
 
   Future<void> _loadApiKey() async {
     final groq = await _groqFuture;
-    final key = await groq.getApiKey();
-    if (key != null && _apiKeyController.text.isEmpty) {
-      setState(() => _apiKeyController.text = key);
+    final maskedKey = await groq.getMaskedApiKey();
+    if (maskedKey != null && _apiKeyController.text.isEmpty) {
+      setState(() => _apiKeyController.text = maskedKey);
     }
   }
 
@@ -137,6 +137,10 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> {
                 _apiKeyController.text = controller.text.trim();
                 await _saveApiKey();
                 if (!mounted) return;
+                // Clear the controller to avoid displaying the key
+                _apiKeyController.clear();
+                _loadApiKey(); // Reload masked version
+                if (!context.mounted) return;
                 if (!context.mounted) return;
                 Navigator.pop(context);
               },

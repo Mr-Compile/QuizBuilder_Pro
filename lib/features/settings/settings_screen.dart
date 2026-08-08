@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/validation/validators.dart';
 import '../../models/user.dart';
 import '../../services/groq_ai_service.dart';
 import '../../services/service_locator.dart';
@@ -48,9 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadApiKey() async {
     final groq = await _groqFuture;
-    final key = await groq.getApiKey();
-    if (key != null && _apiKeyController.text.isEmpty) {
-      setState(() => _apiKeyController.text = key);
+    final maskedKey = await groq.getMaskedApiKey();
+    if (maskedKey != null && _apiKeyController.text.isEmpty) {
+      setState(() => _apiKeyController.text = maskedKey);
     }
   }
 
@@ -176,12 +177,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (newPasswordController.text != confirmPasswordController.text) {
-                _showMessage('Passwords do not match');
+              final passwordError = Validators.password(newPasswordController.text);
+              if (passwordError != null) {
+                _showMessage(passwordError);
                 return;
               }
-              if (newPasswordController.text.isEmpty) {
-                _showMessage('Password cannot be empty');
+              if (newPasswordController.text != confirmPasswordController.text) {
+                _showMessage('Passwords do not match');
                 return;
               }
               if (_user == null) return;
@@ -283,6 +285,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!context.mounted) return;
               Navigator.pop(context);
               _showMessage('API key saved successfully');
+              // Clear the controller to avoid displaying the key
+              _apiKeyController.clear();
+              _loadApiKey(); // Reload masked version
             },
             icon: const Icon(LucideIcons.save),
             label: const Text('Save API Key'),

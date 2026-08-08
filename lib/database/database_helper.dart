@@ -446,6 +446,17 @@ class DatabaseHelper {
     return maps.map(QuizResult.fromMap).toList();
   }
 
+  Future<QuizResult?> getResultById(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'quiz_results',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    return QuizResult.fromMap(maps.first);
+  }
+
   Future<List<QuizResult>> getResultsForStudent(int userId) async {
     final db = await database;
     final maps = await db.query(

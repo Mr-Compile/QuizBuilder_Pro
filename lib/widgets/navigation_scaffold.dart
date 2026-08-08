@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../app.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_constants.dart';
 import '../core/routes/app_routes.dart';
@@ -184,12 +185,6 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
           label: 'Dashboard',
           route: AppRoutes.teacherDashboard,
           isDashboard: true,
-        ),
-        _buildNavItem(
-          context,
-          icon: LucideIcons.user,
-          label: 'Profile',
-          route: AppRoutes.teacherProfile,
         ),
         Padding(
           padding: const EdgeInsets.all(AppTheme.spacing4),
@@ -376,7 +371,27 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
           label: 'Settings',
           route: AppRoutes.settings,
         ),
+        _buildThemeToggle(context),
       ],
+    );
+  }
+
+  Widget _buildThemeToggle(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        Theme.of(context).brightness == Brightness.dark ? LucideIcons.moon : LucideIcons.sun,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      title: const Text('Toggle Theme'),
+      trailing: Switch(
+        value: Theme.of(context).brightness == Brightness.dark,
+        onChanged: (value) {
+          final app = QuizBuilderProApp.globalKey.currentState;
+          if (app != null) {
+            app.setTheme(value ? ThemeMode.dark : ThemeMode.light);
+          }
+        },
+      ),
     );
   }
 

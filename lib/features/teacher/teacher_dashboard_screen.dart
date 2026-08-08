@@ -55,22 +55,25 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             if (data == null) {
               return const Center(child: Text('Error loading dashboard data'));
             }
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(context.responsiveSpacing),
-              child: ResponsiveContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context),
-                    SizedBox(height: context.responsiveSpacing * 2),
-                    _buildSummaryCards(context, data.summary),
-                    SizedBox(height: context.responsiveSpacing * 2),
-                    _buildChartsSection(context, data),
-                    SizedBox(height: context.responsiveSpacing * 2),
-                    _buildRecentActivity(context, data),
-                    SizedBox(height: context.responsiveSpacing * 2),
-                    _buildQuickActions(context),
-                  ],
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(context.responsiveSpacing),
+                child: ResponsiveContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context),
+                      SizedBox(height: context.responsiveSpacing * 2),
+                      _buildSummaryCards(context, data.summary),
+                      SizedBox(height: context.responsiveSpacing * 2),
+                      _buildChartsSection(context, data),
+                      SizedBox(height: context.responsiveSpacing * 2),
+                      _buildRecentActivity(context, data),
+                      SizedBox(height: context.responsiveSpacing * 2),
+                      _buildQuickActions(context),
+                      SizedBox(height: context.responsiveSpacing),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -112,65 +115,93 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               ),
         ),
         SizedBox(height: context.responsiveSpacing),
-        ResponsiveGrid(
-          mobileColumns: 1,
-          tabletColumns: 2,
-          desktopColumns: 4,
-          childAspectRatio: context.isMobile ? 2.5 : (context.isTablet ? 1.8 : 1.5),
-          children: [
-            EnhancedSummaryCard(
-              label: 'Total Students',
-              value: AnalyticsWidgets.formatNumber(data.totalStudents),
-              icon: LucideIcons.users,
-              color: AppColors.primary,
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
-            ),
-            EnhancedSummaryCard(
-              label: 'Active Students',
-              value: AnalyticsWidgets.formatNumber(data.activeStudents),
-              icon: LucideIcons.userCheck,
-              color: AppColors.add,
-            ),
-            EnhancedSummaryCard(
-              label: 'Total Topics',
-              value: AnalyticsWidgets.formatNumber(data.topics),
-              icon: LucideIcons.bookOpen,
-              color: AppColors.secondary,
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
-            ),
-            EnhancedSummaryCard(
-              label: 'Total Questions',
-              value: AnalyticsWidgets.formatNumber(data.questions),
-              icon: LucideIcons.helpCircle,
-              color: AppColors.accent,
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
-            ),
-            EnhancedSummaryCard(
-              label: 'AI Questions',
-              value: AnalyticsWidgets.formatNumber(data.aiQuestions),
-              icon: LucideIcons.wand2,
-              color: AppColors.startQuiz,
-            ),
-            EnhancedSummaryCard(
-              label: 'Quiz Attempts Today',
-              value: AnalyticsWidgets.formatNumber(data.attemptsToday),
-              icon: LucideIcons.clipboardList,
-              color: AppColors.edit,
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.results),
-            ),
-            EnhancedSummaryCard(
-              label: 'Total Attempts',
-              value: AnalyticsWidgets.formatNumber(data.totalAttempts),
-              icon: LucideIcons.barChart2,
-              color: AppColors.info,
-            ),
-            EnhancedSummaryCard(
-              label: 'Avg Student Score',
-              value: AnalyticsWidgets.formatPercentage(data.averageScore),
-              icon: LucideIcons.percent,
-              color: AppColors.success,
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = constraints.maxWidth > 1200 ? 4 : 
+                                   constraints.maxWidth > 600 ? 2 : 1;
+            return Wrap(
+              spacing: context.responsiveSpacing,
+              runSpacing: context.responsiveSpacing,
+              children: [
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Total Students',
+                    value: AnalyticsWidgets.formatNumber(data.totalStudents),
+                    icon: LucideIcons.users,
+                    color: AppColors.primary,
+                    onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.studentManagement),
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Active Students',
+                    value: AnalyticsWidgets.formatNumber(data.activeStudents),
+                    icon: LucideIcons.userCheck,
+                    color: AppColors.add,
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Total Topics',
+                    value: AnalyticsWidgets.formatNumber(data.topics),
+                    icon: LucideIcons.bookOpen,
+                    color: AppColors.secondary,
+                    onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.topicManagement),
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Total Questions',
+                    value: AnalyticsWidgets.formatNumber(data.questions),
+                    icon: LucideIcons.helpCircle,
+                    color: AppColors.accent,
+                    onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.questionManagement),
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'AI Questions',
+                    value: AnalyticsWidgets.formatNumber(data.aiQuestions),
+                    icon: LucideIcons.wand2,
+                    color: AppColors.startQuiz,
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Quiz Attempts Today',
+                    value: AnalyticsWidgets.formatNumber(data.attemptsToday),
+                    icon: LucideIcons.clipboardList,
+                    color: AppColors.edit,
+                    onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.results),
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Total Attempts',
+                    value: AnalyticsWidgets.formatNumber(data.totalAttempts),
+                    icon: LucideIcons.barChart2,
+                    color: AppColors.info,
+                  ),
+                ),
+                SizedBox(
+                  width: (constraints.maxWidth - (context.responsiveSpacing * (crossAxisCount - 1))) / crossAxisCount,
+                  child: EnhancedSummaryCard(
+                    label: 'Avg Student Score',
+                    value: AnalyticsWidgets.formatPercentage(data.averageScore),
+                    icon: LucideIcons.percent,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -204,7 +235,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           label: 'Manage Students',
           subtitle: 'Add, edit, or deactivate student accounts',
           color: AppColors.primary,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.studentManagement),
         ),
         SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
@@ -212,7 +243,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           label: 'Manage Topics',
           subtitle: 'Create and organize quiz topics',
           color: AppColors.secondary,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.topicManagement),
         ),
         SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
@@ -220,7 +251,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           label: 'Manage Questions',
           subtitle: 'Add, edit, or remove quiz questions',
           color: AppColors.accent,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.questionManagement),
         ),
         SizedBox(height: context.responsiveSpacing),
         EnhancedActionCard(
@@ -228,7 +259,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           label: 'AI Generate Questions',
           subtitle: 'Use AI to generate quiz questions',
           color: AppColors.startQuiz,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.aiGenerate),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.aiGenerate),
         ),
       ],
     );
@@ -246,28 +277,28 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           label: 'Manage Students',
           subtitle: 'Add, edit, or deactivate student accounts',
           color: AppColors.primary,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.studentManagement),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.studentManagement),
         ),
         EnhancedActionCard(
           icon: LucideIcons.bookOpen,
           label: 'Manage Topics',
           subtitle: 'Create and organize quiz topics',
           color: AppColors.secondary,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.topicManagement),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.topicManagement),
         ),
         EnhancedActionCard(
           icon: LucideIcons.helpCircle,
           label: 'Manage Questions',
           subtitle: 'Add, edit, or remove quiz questions',
           color: AppColors.accent,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.questionManagement),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.questionManagement),
         ),
         EnhancedActionCard(
           icon: LucideIcons.wand2,
           label: 'AI Generate Questions',
           subtitle: 'Use AI to generate quiz questions',
           color: AppColors.startQuiz,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.aiGenerate),
+          onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.aiGenerate),
         ),
       ],
     );
