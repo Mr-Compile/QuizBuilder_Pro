@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:excel/excel.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart' show SharePlus, ShareParams, XFile;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../models/question.dart';
@@ -79,7 +79,10 @@ class ExportService {
     final file = File('${output.path}/quiz_result_$resultId.pdf');
     await file.writeAsBytes(await pdf.save());
     
-    await Share.shareXFiles([XFile(file.path)], text: 'Quiz Result PDF');
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(file.path)],
+      text: 'Quiz Result PDF',
+    ));
   }
 
   /// Export quiz result to Excel
@@ -140,7 +143,10 @@ class ExportService {
     final bytes = excel.encode();
     if (bytes != null) {
       await file.writeAsBytes(bytes);
-      await Share.shareXFiles([XFile(file.path)], text: 'Quiz Result Excel');
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path)],
+        text: 'Quiz Result Excel',
+      ));
     }
   }
 
@@ -179,7 +185,10 @@ class ExportService {
     final bytes = excel.encode();
     if (bytes != null) {
       await file.writeAsBytes(bytes);
-      await Share.shareXFiles([XFile(file.path)], text: 'All Quiz Results Excel');
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path)],
+        text: 'All Quiz Results Excel',
+      ));
     }
   }
 }

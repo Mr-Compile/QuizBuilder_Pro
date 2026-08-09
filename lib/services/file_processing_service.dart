@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/file_picker.dart' as file_picker;
 import 'package:image_picker/image_picker.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 /// Service for processing various file types to extract text content.
 /// Supports TXT, PDF, DOCX, PPTX, and images with OCR.
@@ -9,9 +9,9 @@ class FileProcessingService {
   final ImagePicker _imagePicker = ImagePicker();
 
   /// Pick a file from device storage.
-  Future<FilePickerResult?> pickFile() async {
-    return await FilePicker.platform.pickFiles(
-      type: FileType.custom,
+  Future<file_picker.FilePickerResult?> pickFile() async {
+    return await file_picker.FilePicker.pickFiles(
+      type: file_picker.FileType.custom,
       allowedExtensions: ['txt', 'pdf', 'docx', 'pptx', 'jpg', 'jpeg', 'png'],
       allowMultiple: false,
     );
@@ -23,7 +23,7 @@ class FileProcessingService {
   }
 
   /// Extract text from a file based on its type.
-  Future<String> extractTextFromFile(FilePickerResult result) async {
+  Future<String> extractTextFromFile(file_picker.FilePickerResult result) async {
     if (result.files.isEmpty) {
       throw Exception('No file selected');
     }
@@ -89,7 +89,7 @@ class FileProcessingService {
   /// Extract text from an image using OCR.
   Future<String> _extractFromImage(String path) async {
     final inputImage = InputImage.fromFilePath(path);
-    final textRecognizer = GoogleMlKit.vision.textRecognizer();
+    final textRecognizer = TextRecognizer();
 
     try {
       final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);

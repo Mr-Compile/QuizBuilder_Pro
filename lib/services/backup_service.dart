@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/file_picker.dart' as file_picker;
 import '../database/database_helper.dart';
 
 /// Backup data structure containing all app data
@@ -182,8 +182,8 @@ class BackupService {
   /// Select a backup file using file picker
   Future<String?> selectBackupFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
+      final result = await file_picker.FilePicker.pickFiles(
+        type: file_picker.FileType.custom,
         allowedExtensions: ['json'],
         dialogTitle: 'Select QuizBuilder Backup File',
       );
