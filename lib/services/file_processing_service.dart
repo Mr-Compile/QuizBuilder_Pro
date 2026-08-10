@@ -10,7 +10,7 @@ class FileProcessingService {
 
   /// Pick a file from device storage.
   Future<file_picker.FilePickerResult?> pickFile() async {
-    return await file_picker.FilePicker.pickFiles(
+    return await file_picker.FilePicker.platform.pickFiles(
       type: file_picker.FileType.custom,
       allowedExtensions: ['txt', 'pdf', 'docx', 'pptx', 'jpg', 'jpeg', 'png'],
       allowMultiple: false,

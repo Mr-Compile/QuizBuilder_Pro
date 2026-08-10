@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart' show SharePlus, ShareParams;
+import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
@@ -68,7 +68,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
       }
 
       if (!mounted) return;
-      await SharePlus.instance.share(ShareParams(text: csvBuffer.toString()));
+      await Share.share(csvBuffer.toString());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Results exported successfully')),

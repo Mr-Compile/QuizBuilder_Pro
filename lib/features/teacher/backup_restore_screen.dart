@@ -139,9 +139,6 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     });
 
     try {
-      // Validate backup first
-      await _backupService.validateBackup(_importedBackup!);
-      
       // Perform restore
       await _backupService.restoreBackup(_importedBackup!);
       

@@ -182,7 +182,7 @@ class BackupService {
   /// Select a backup file using file picker
   Future<String?> selectBackupFile() async {
     try {
-      final result = await file_picker.FilePicker.pickFiles(
+      final result = await file_picker.FilePicker.platform.pickFiles(
         type: file_picker.FileType.custom,
         allowedExtensions: ['json'],
         dialogTitle: 'Select QuizBuilder Backup File',
@@ -248,30 +248,38 @@ class BackupService {
     }
   }
 
-  /// Validate backup file before restore
-  /// Returns true if backup is valid
-  Future<bool> validateBackup(BackupData backupData) async {
+  /// Get available backup files
+  Future<List<File>> getAvailableBackups() async {
     try {
-      // Check version compatibility
-      if (backupData.version != _currentVersion) {
-        // Could add version migration logic here
-        // For now, we'll allow it but warn the user
+      final directory = await getApplicationDocumentsDirectory();
+      final backupDir = Directory('${directory.path}${Platform.pathSeparator}QuizBuilder_Backups');
+      
+      if (!await backupDir.exists()) {
+        return [];
       }
 
-      // Validate that required data exists
-      if (backupData.users.isEmpty) {
-        throw Exception('Backup contains no users');
-      }
+      final files = await backupDir.list().where((entity) => 
+        entity is File && entity.path.endsWith('.json')
+      ).cast<File>().toList();
 
-      // Check that at least one teacher exists
-      final hasTeacher = backupData.users.any((u) => u['role'] == 'teacher');
-      if (!hasTeacher) {
-        throw Exception('Backup must contain at least one teacher account');
-      }
-
-      return true;
+      // Sort by creation time (newest first)
+      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      
+      return files;
     } catch (e) {
-      throw Exception('Backup validation failed: $e');
+      throw Exception('Failed to get available backups: $e');
+    }
+  }
+
+  /// Delete a backup file
+  Future<void> deleteBackup(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      throw Exception('Failed to delete backup: $e');
     }
   }
 }
